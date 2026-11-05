@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="hasRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A51930" />
+      <stop offset="100%" stop-color="#6F1020" />
+    </linearGradient>
+    <linearGradient id="hasCyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+    <filter id="hasSoftShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#0F172A" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle -->
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#hasRedGrad)" filter="url(#hasSoftShadow)" />
+
+  <!-- Inner Accent Glow Border -->
+  <rect x="5.5" y="5.5" width="53" height="53" rx="12.5" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+
+  <!-- Isometric 3D Hex/Cube Node -->
+  <polygon points="32,13 46,21 32,29 18,21" fill="#FFFFFF" opacity="0.95" />
+  <polygon points="18,21 32,29 32,45 18,37" fill="#E2E8F0" opacity="0.9" />
+  <polygon points="32,29 46,21 46,37 32,45" fill="url(#hasCyanGrad)" />
+
+  <circle cx="46" cy="21" r="3.5" fill="#38BDF8" />
+  <circle cx="18" cy="21" r="2.5" fill="#FFFFFF" />
+  <circle cx="32" cy="45" r="3" fill="#0284C7" />
+
+  <text x="32" y="57" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="900" fill="#FFFFFF" letter-spacing="1">HAS</text>
+</svg>
