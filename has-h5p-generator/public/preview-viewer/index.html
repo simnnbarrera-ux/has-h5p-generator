@@ -231,7 +231,7 @@
     }
 
     /* Activity Question Content & Scroll Containment */
-    .h5p-course-presentation .h5p-element .h5p-element-inner:not(.h5p-interactive-video) {
+    .h5p-course-presentation .h5p-element .h5p-element-inner:not(.h5p-interactive-video):not(.h5p-advanced-text):not(.h5p-shape):not(.h5p-image) {
       overflow-y: auto !important;
       padding-bottom: 24px !important;
       box-sizing: border-box !important;
@@ -553,9 +553,19 @@
         try { playerWindow.dispatchEvent(new playerWindow.Event('resize')); } catch (e) {}
         var playerH5P = playerWindow.H5P;
         if (playerH5P && playerH5P.instances && playerH5P.instances[0]) {
-          try { playerH5P.trigger(playerH5P.instances[0], 'resize'); } catch (e) {}
+          var presentation = playerH5P.instances[0];
+          // Course Presentation escala la letra como 16px * anchoActual / this.width y
+          // toma this.width del ancho CSS inicial del wrapper (640px en Moodle). Este
+          // visor fuerza width:100%, así que this.width quedaba igual al ancho real y la
+          // letra se fijaba en 16px a cualquier tamaño: la vista previa no coincidía con
+          // Moodle y en celular el texto salía ~3x más grande y se desbordaba.
+          if (typeof presentation.width === 'number' && presentation.width !== CP_DESIGN_WIDTH) {
+            presentation.width = CP_DESIGN_WIDTH;
+          }
+          try { playerH5P.trigger(presentation, 'resize'); } catch (e) {}
         }
       }
+      var CP_DESIGN_WIDTH = 640;
 
       function waitForPresentation(timeoutMs) {
         return new Promise(function (resolve, reject) {
