@@ -538,32 +538,11 @@ export default function StudioApp() {
             onOpenProject={(id) => handleOpenProjectInWizard(id)}
             onNewProject={() => {
               if (isDemoMode) return;
-              setWorkingSpec({
-                id: `actividad-nueva-${Date.now().toString().slice(-4)}`,
-                title: "Nueva Actividad Interactiva",
-                courseName: profile.program || "Campus Virtual UAO",
-                moduleName: "Módulo 1",
-                activityNumber: projects.length + 1,
-                templateId: "plantilla-1",
-                selectedTemplateId: "facultad-1",
-                baseTemplateId: "facultad-1",
-                defaultVoice: profile.preferred_voice || "es-CO-SalomeNeural",
-                includeNavigationGuide: false,
-                slides: [
-                  {
-                    id: "slide-1",
-                    templateSlide: 2,
-                    menuTitle: "Portada",
-                    titleBlack: "Nueva Actividad",
-                    titleAccent: "Interactiva",
-                    compositionId: "composicion-01",
-                    subtitle: profile.faculty,
-                    paragraphs: ["Bienvenido a la lección."],
-                  },
-                ],
-                auditReport: ["Creado con HAS H5P Wizard."],
-                textChanges: [],
-              });
+              const newSpec = structuredClone(RETO11_ACT1_SPEC);
+              newSpec.id = `actividad-nueva-${Date.now().toString().slice(-6)}`;
+              newSpec.activityNumber = projects.length + 1;
+              newSpec.defaultVoice = profile.preferred_voice || newSpec.defaultVoice;
+              setWorkingSpec(newSpec);
               navigateToRoute({ view: "wizard", step: 1 });
             }}
             onPreviewProject={(id) => handleOpenPreviewModal(id, "player", isDemoMode)}
