@@ -416,6 +416,57 @@
         min-width: 80px !important;
       }
     }
+
+    /* H5P 1.27 relies on an icon font that may be blocked by the browser; use text arrows. */
+    .h5p-course-presentation .h5p-theme-previous::before,
+    .h5p-course-presentation .h5p-theme-next::before {
+      font-family: Arial, sans-serif !important;
+      font-size: 20px !important;
+      font-weight: 700 !important;
+      line-height: 1 !important;
+      display: inline-block !important;
+      color: #ffffff !important;
+    }
+    .h5p-course-presentation .h5p-theme-previous::before { content: "←" !important; }
+    .h5p-course-presentation .h5p-theme-next::before { content: "→" !important; }
+    .h5p-course-presentation .h5p-theme-nav-button .h5p-theme-label {
+      display: none !important;
+    }
+
+    @page { size: landscape; margin: 6mm; }
+    @media print {
+      html, body, .h5p-content, .h5p-course-presentation, .h5p-wrapper,
+      .h5p-box-wrapper, .h5p-presentation-wrapper, .h5p-slides-wrapper {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+      .h5p-progressbar, .h5p-footer, .h5p-course-presentation-footer,
+      .h5p-element-button, .h5p-popup-overlay {
+        display: none !important;
+      }
+      .h5p-slides-wrapper { position: static !important; }
+      .h5p-slide {
+        display: block !important;
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: 96vh !important;
+        min-height: 0 !important;
+        transform: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        overflow: hidden !important;
+        break-after: page !important;
+        page-break-after: always !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      .h5p-element-outer, .h5p-element-inner { overflow: visible !important; }
+    }
   </style>
 </head>
 <body>

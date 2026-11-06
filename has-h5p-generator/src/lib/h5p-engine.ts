@@ -181,6 +181,20 @@ export function escHtml(t: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function relativeLuminance(hex: string): number | null {
+  const match = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(hex);
+  if (!match) return null;
+  const raw = match[1].length === 3 ? [...match[1]].map((c) => c + c).join("") : match[1];
+  const c = [0, 2, 4].map((i) => parseInt(raw.slice(i, i + 2), 16) / 255)
+    .map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+function readableTextColor(color: string, fallback: string): string {
+  const l = relativeLuminance(color);
+  return l === null || 1.05 / (l + 0.05) < 4.5 ? fallback : color;
+}
+
 export function htmlTitulo(
   negro: string,
   azul = "",
@@ -192,6 +206,7 @@ export function htmlTitulo(
 ): string {
   const cleanNegro = (negro || "").trim();
   const cleanAzul = (azul || "").trim();
+  const readableAccent = readableTextColor(colorAcento, colorPrimario);
   const totalLen = cleanNegro.length + cleanAzul.length;
   let adjustedTam = tam;
   const emMatch = tam.match(/^([\d.]+)em$/);
@@ -211,7 +226,7 @@ export function htmlTitulo(
   }
   if (cleanAzul) {
     const sep = cleanNegro ? " " : "";
-    s += `<span style="font-size:${adjustedTam};color:${colorAcento};font-family:${fontStack};line-height:1.18;"><strong>${sep}${escHtml(
+    s += `<span style="font-size:${adjustedTam};color:${readableAccent};font-family:${fontStack};line-height:1.18;"><strong>${sep}${escHtml(
       cleanAzul
     )}</strong></span>`;
   }
@@ -1264,6 +1279,7 @@ function compileSlideFromSpec(
   const tmpl = selectedTheme || getPresentationTemplate(projectTemplateId);
   const colorPrimary = tmpl.colors.primary;
   const colorAccent = tmpl.colors.accent;
+  const colorAccentText = readableTextColor(colorAccent, tmpl.colors.textPrimary);
   const colorBackground = tmpl.colors.background;
   const colorCardBg = tmpl.colors.cardBg;
   const colorTextPrimary = tmpl.colors.textPrimary;
@@ -1421,7 +1437,7 @@ function compileSlideFromSpec(
       els[3].height = 12;
       els[3].action.params.text = `<p style="margin:0;line-height:1.25;font-family:${fontStack};"><span style="font-size:${sz(
         "1.15em"
-      )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+      )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
         slideSpec.subtitle || `Actividad ${slideSpec.id}`
       )}</strong></span></p>`;
       const titleFontSize =
@@ -1466,7 +1482,7 @@ function compileSlideFromSpec(
         els[1].height = 8;
         els[1].action.params.text = `<p style="margin:0;line-height:1.2;font-family:${fontStack};"><span style="font-size:${sz(
           "1.02em"
-        )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+        )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
           slideSpec.subtitle || slideSpec.menuTitle
         )}</strong></span></p>`;
 
@@ -1528,7 +1544,7 @@ function compileSlideFromSpec(
         els[1].height = 7;
         els[1].action.params.text = `<p style="margin:0;line-height:1.2;font-family:${fontStack};"><span style="font-size:${sz(
           "1.02em"
-        )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+        )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
           slideSpec.subtitle || slideSpec.menuTitle
         )}</strong></span></p>`;
 
@@ -1883,7 +1899,7 @@ function compileSlideFromSpec(
       els[2].height = 9;
       els[2].action.params.text = `<p style="margin:0;line-height:1.2;font-family:${fontStack};"><span style="font-size:${sz(
         "0.95em"
-      )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+      )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
         slideSpec.subtitle || "Paso"
       )}</strong></span></p>`;
       els[5].x = 6.5;
@@ -1953,7 +1969,7 @@ function compileSlideFromSpec(
       els[3].height = 12;
       els[3].action.params.text = `<p style="margin:0;line-height:1.25;font-family:${fontStack};"><span style="font-size:${sz(
         "1.02em"
-      )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+      )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
         slideSpec.subtitle || "Fuentes de estudio"
       )}</strong></span></p>`;
 
@@ -1961,7 +1977,7 @@ function compileSlideFromSpec(
       if (slideSpec.links?.length) {
         for (const l of slideSpec.links) {
           listItemsHtml.push(
-            `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};">${htmlEnlace(l.label, l.url, sz("0.82em"), fontStack, colorAccent)}</li>`
+            `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};">${htmlEnlace(l.label, l.url, sz("0.82em"), fontStack, colorAccentText)}</li>`
           );
         }
       }
@@ -2240,7 +2256,7 @@ function compileSlideFromSpec(
         els[3].height = 12;
         els[3].action.params.text = `<p style="margin:0;line-height:1.25;font-family:${fontStack};"><span style="font-size:${sz(
           "1.05em"
-        )};color:${colorAccent};font-family:${fontStack};"><strong>${escHtml(
+        )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
           slideSpec.subtitle
         )}</strong></span></p>`;
       }
@@ -2336,6 +2352,22 @@ function compileSlideFromSpec(
     }
   }
   raw.elements = [...compositionShapes, ...finalElements, ...additions];
+  const isTemplatePlaceholder = (html: string) => {
+    const text = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+    return /lorem\s+ipsum|t[ií]tulo\s*:|imagen\s+pendiente|apellido\s*,?\s*n\.|^m[oó]dulo\s+\d+\s*:/i.test(text);
+  };
+  raw.elements = raw.elements.filter((element: any) => {
+    const text = element?.action?.params?.text;
+    if (typeof text === "string" && isTemplatePlaceholder(text)) return false;
+    if (element?.action?.library?.startsWith("H5P.Image") && /imagen pendiente/i.test(String(element?.action?.params?.alt || ""))) return false;
+    return true;
+  });
+  const textElements = raw.elements.filter((element: any) => element?.action?.library?.startsWith("H5P.AdvancedText") && typeof element?.action?.params?.text === "string" && element.action.params.text.replace(/<[^>]*>/g, " ").trim());
+  if (textElements.length === 0 && slideSpec.menuTitle) {
+    raw.elements.push({ x: 6, y: 7, width: 88, height: 16, backgroundOpacity: 0, displayAsButton: false, buttonSize: "big", goToSlideType: "specified", invisible: false, action: { library: "H5P.AdvancedText 1.1", metadata: { contentType: "Text", license: "U", title: "Título de diapositiva" }, params: { text: htmlTitulo(slideSpec.titleBlack || slideSpec.menuTitle, slideSpec.titleAccent || "", "1.3em", "h2", fontStack, colorTextPrimary, colorAccentText) } } });
+    const fallbackBody = [...(slideSpec.paragraphs || []), ...(slideSpec.bullets || [])].filter((text) => text.trim() && !isTemplatePlaceholder(text)).slice(0, 4);
+    if (fallbackBody.length || !slideSpec.interaction) raw.elements.push({ x: 7, y: 28, width: 86, height: 58, backgroundOpacity: 0, displayAsButton: false, buttonSize: "big", goToSlideType: "specified", invisible: false, action: { library: "H5P.AdvancedText 1.1", metadata: { contentType: "Text", license: "U", title: "Contenido de diapositiva" }, params: { text: htmlParrafos(fallbackBody.length ? fallbackBody : [`Explora los conceptos principales de ${slideSpec.menuTitle}.`], "0.9em", colorTextPrimary, fontStack) } } });
+  }
   return raw;
 }
 
@@ -2627,6 +2659,16 @@ export async function buildH5pPackageFromSpec(
 
   const finalContent = JSON.parse(JSON.stringify(templateContent));
   finalContent.presentation.slides = compiledSlides;
+  for (const slide of finalContent.presentation.slides) {
+    slide.elements = slide.elements.filter((element: any) => {
+      if (!element?.action?.library?.startsWith("H5P.Image")) return true;
+      const path = element?.action?.params?.file?.path;
+      if (typeof path !== "string" || path.startsWith("http://") || path.startsWith("https://")) return true;
+      const fileName = path.split("/").pop() || "";
+      const baseName = fileName.replace(/\.[^.]+$/, "");
+      return Boolean(zip.file(`content/${path}`) || generatedSvgs.has(fileName) || generatedSvgs.has(`${baseName}.svg`) || generatedSvgs.has(`${baseName}.png`));
+    });
+  }
   finalContent.presentation.globalBackgroundSelector = {
     fillGlobalBackground: templateConfig.colors.background,
   };
