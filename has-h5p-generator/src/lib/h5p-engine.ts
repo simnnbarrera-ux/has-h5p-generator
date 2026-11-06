@@ -1393,29 +1393,11 @@ function compileSlideFromSpec(
     rectIdx: number,
     labelIdx: number
   ) => {
-    const refs = [...(slideSpec.apaReferences || [])];
-    if (svgAsset?.apaCitation && !refs.includes(svgAsset.apaCitation)) {
-      refs.push(svgAsset.apaCitation);
-    }
-    if (refs.length > 0 && els[popupIdx]?.action?.params) {
-      els[popupIdx].action.params.text =
-        `<div style="background:#FFFFFF;color:#0F172A;padding:12px 14px;border-radius:8px;border:1px solid #CBD5E1;">` +
-        `<p style="margin:0 0 8px 0;font-weight:700;color:#0F172A;font-family:${fontStack};font-size:${sz("0.85em")};">Fuentes y Referencias Académicas:</p>` +
-        htmlLista(refs, sz("0.78em"), fontStack) +
-        `</div>`;
-      if (els[rectIdx]?.action?.params?.shape) {
-        els[rectIdx].action.params.shape.fillColor = colorAccent;
-        els[rectIdx].action.params.shape.borderRadius = "6";
-        els[rectIdx].action.params.shape.borderWidth = "0";
-      }
-      if (els[labelIdx]?.action?.params) {
-        els[labelIdx].action.params.text = `<p><span style="font-size:0.75em;color:#FFFFFF;font-family:${fontStack};"><strong>Referencias</strong></span></p>`;
-      }
-    } else {
-      toRemove.add(popupIdx);
-      toRemove.add(rectIdx);
-      toRemove.add(labelIdx);
-    }
+    // Eliminar el cuadro de referencias superpuesto que colisiona con el texto principal
+    // de la diapositiva en el visor H5P. Las referencias oficiales se listan en el cierre APA.
+    toRemove.add(popupIdx);
+    toRemove.add(rectIdx);
+    toRemove.add(labelIdx);
   };
 
   switch (slideNum) {

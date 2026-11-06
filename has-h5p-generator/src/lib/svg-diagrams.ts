@@ -46,8 +46,8 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   </defs>
   <rect width="800" height="600" rx="24" fill="url(#bgGrad)"/>
   <rect x="30" y="30" width="740" height="84" rx="16" fill="url(#uaoGrad)"/>
-  <text x="60" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">CAMPUS DIGITAL UAO · TRAYECTORIA FORMATIVA</text>
-  <text x="60" y="98" font-family="Arial, sans-serif" font-size="15" fill="#E0F3FA">Matemáticas Discretas · Comunidad de Aprendizaje y Red Colaborativa</text>
+  <text x="60" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">CAMPUS DIGITAL UAO - TRAYECTORIA FORMATIVA</text>
+  <text x="60" y="98" font-family="Arial, sans-serif" font-size="15" fill="#E0F3FA">Matematicas Discretas - Comunidad de Aprendizaje y Red Colaborativa</text>
 
   <!-- Nodos de la ruta de bienvenida -->
   <g transform="translate(55, 155)">
@@ -89,7 +89,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <rect x="55" y="455" width="690" height="105" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
   <text x="400" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#8A1428">Competencia Cuantitativa y Pensamiento Lógico-Matemático</text>
   <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">Integrar modelos discretos y algoritmos computacionales en escenarios reales de Ingeniería de Datos y Multimedia.</text>
-  <text x="400" y="544" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#0099E6">01010101 01000001 01001111  →  "UAO"  |  IEEE-754 (32 &amp; 64 bits)</text>
+  <text x="400" y="544" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#0099E6">01010101 01000001 01001111  ->  "UAO"  |  IEEE-754 (32 & 64 bits)</text>
 </svg>`,
   },
 
@@ -104,58 +104,58 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 580" width="860" height="580">
   <rect width="860" height="580" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="72" rx="14" fill="#8A1428"/>
-  <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">ESTÁNDAR IEEE-754: ARITMÉTICA DE PUNTO FLOTANTE EN MÁQUINA</text>
-  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Del conjunto infinito de los números reales (R) a una representación finita y discreta de 32 y 64 bits</text>
+  <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">ESTANDAR IEEE-754: ARITMETICA DE PUNTO FLOTANTE EN MAQUINA</text>
+  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Del conjunto infinito de los reales (R) a una representacion finita de 32 y 64 bits</text>
 
   <!-- Fórmula Matemática Renderizada en Vector (Reemplaza MathDisplay) -->
   <rect x="24" y="108" width="812" height="86" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
-  <text x="430" y="136" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#8A1428">MODELO MATEMÁTICO DE NORMALIZACIÓN EN BASE 2</text>
+  <text x="430" y="136" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#8A1428">MODELO MATEMATICO DE NORMALIZACION EN BASE 2</text>
   <text x="430" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#0B0F19">
-    x = (-1)ˢ × (1 . b₁b(bin)b₃...bₘ)(bin) × 2^(E - Bias)
+    x = (-1)^s  x  (1 . b1 b2 b3 ... bm)_bin  x  2^(E - Bias)
   </text>
 
   <!-- Precisión Simple 32 Bits -->
   <g transform="translate(24, 214)">
     <rect width="812" height="155" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
-    <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">1. Precisión Simple (binary32 — 32 bits / 4 bytes) · Sesgo (Bias) = 127</text>
+    <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">1. Precision Simple (binary32 - 32 bits / 4 bytes) | Sesgo (Bias) = 127</text>
 
     <!-- Bit Signo -->
     <rect x="24" y="48" width="110" height="64" rx="8" fill="#8A1428"/>
     <text x="79" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Signo (S)</text>
-    <text x="79" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">1 bit [b₃₁]</text>
+    <text x="79" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">1 bit [b31]</text>
 
     <!-- Exponente -->
     <rect x="144" y="48" width="230" height="64" rx="8" fill="#0099E6"/>
     <text x="259" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Exponente (E = e + 127)</text>
-    <text x="259" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">8 bits [b₃₀ ... b(bin)₃]</text>
+    <text x="259" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">8 bits [b30 ... b23]</text>
 
     <!-- Mantisa -->
     <rect x="384" y="48" width="404" height="64" rx="8" fill="#1D5CFF"/>
-    <text x="586" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa / Fracción Normalizada (M)</text>
-    <text x="586" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">23 bits [b(bin)(bin) ... b₀] (bit implícito 1.)</text>
+    <text x="586" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa / Fraccion Normalizada (M)</text>
+    <text x="586" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">23 bits [b22 ... b0] (bit implicito 1.)</text>
 
-    <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (-12.5)(dec) = -1100.1(bin) = -1.1001(bin) × 2³  →  S = 1 | E = 3+127 = 130 (10000010(bin)) | M = 10010000000000000000000(bin)</text>
+    <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (-12.5)_dec = -1100.1_bin = -1.1001_bin x 2^3 -> S=1 | E=130 (10000010_bin) | M=1001000...0_bin</text>
   </g>
 
   <!-- Precisión Doble 64 Bits -->
   <g transform="translate(24, 386)">
     <rect width="812" height="168" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
-    <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">2. Precisión Doble (binary64 — 64 bits / 8 bytes) · Sesgo (Bias) = 1023</text>
+    <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">2. Precision Doble (binary64 - 64 bits / 8 bytes) | Sesgo (Bias) = 1023</text>
 
     <rect x="24" y="48" width="110" height="64" rx="8" fill="#8A1428"/>
     <text x="79" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Signo (S)</text>
-    <text x="79" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">1 bit [b₆₃]</text>
+    <text x="79" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">1 bit [b63]</text>
 
     <rect x="144" y="48" width="250" height="64" rx="8" fill="#0099E6"/>
     <text x="269" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Exponente (E = e + 1023)</text>
-    <text x="269" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">11 bits [b₆(bin) ... b₅(bin)]</text>
+    <text x="269" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">11 bits [b62 ... b52]</text>
 
     <rect x="404" y="48" width="384" height="64" rx="8" fill="#0B0F19"/>
-    <text x="596" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa de Alta Precisión (M)</text>
-    <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b₅₁ ... b₀] (~15-17 dígitos dec.)</text>
+    <text x="596" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa de Alta Precision (M)</text>
+    <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b51 ... b0] (15-17 digitos dec.)</text>
 
     <text x="24" y="140" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">Nota clave:</text>
-    <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de números racionales diádicos (k / 2ⁿ) tiene representación exacta en punto flotante.</text>
+    <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de números racionales diádicos (k / 2^n) tiene representación exacta en punto flotante.</text>
   </g>
 </svg>`,
   },
@@ -171,16 +171,16 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 560" width="860" height="560">
   <rect width="860" height="560" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="72" rx="14" fill="#8A1428"/>
-  <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">PASO 2 · LA MÁQUINA DE TURING Y LOS LENGUAJES FORMALES</text>
-  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Abstracción matemática del procesamiento algorítmico y manipulación discreta de símbolos</text>
+  <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">PASO 2: LA MAQUINA DE TURING Y LENGUAJES FORMALES</text>
+  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Abstraccion matematica del procesamiento algoritmico y manipulacion de simbolos</text>
 
   <!-- Definición formal 7-tupla -->
   <rect x="24" y="110" width="812" height="70" rx="12" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="430" y="138" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#0B0F19">
-    M = ( Q, Σ, Γ, δ, q₀, B, F )     donde     δ : Q × Γ → Q × Γ × { L, R }
+    M = ( Q, Sigma, Gamma, delta, q0, B, F )   donde   delta : Q x Gamma -> Q x Gamma x { L, R }
   </text>
   <text x="430" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">
-    Q: Estados finitos · Σ: Alfabeto de entrada {0,1} · Γ: Símbolos de cinta · δ: Función de transición · q₀: Estado inicial · F: Estados finales
+    Q: Estados finitos | Sigma: Alfabeto {0,1} | Gamma: Cinta | delta: Transicion | q0: Inicial | F: Finales
   </text>
 
   <!-- Cinta Infinita -->
@@ -220,10 +220,10 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <polygon points="380,104 354,142 406,142" fill="#8A1428"/>
     <rect x="240" y="142" width="280" height="156" rx="16" fill="#0B0F19" stroke="#0099E6" stroke-width="3"/>
     <text x="380" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0099E6">CABEZAL LECTOR / ESCRITOR</text>
-    <text x="380" y="204" text-anchor="middle" font-family="monospace" font-size="16" fill="#FFFFFF">Estado Actual: q(bin) (Normalizando)</text>
-    <text x="380" y="234" text-anchor="middle" font-family="monospace" font-size="15" fill="#E0F3FA">Regla: δ(q(bin), '1') = (q₃, '0', R)</text>
+    <text x="380" y="204" text-anchor="middle" font-family="monospace" font-size="16" fill="#FFFFFF">Estado Actual: q_bin (Normalizando)</text>
+    <text x="380" y="234" text-anchor="middle" font-family="monospace" font-size="15" fill="#E0F3FA">Regla: delta(q_bin, '1') = (q3, '0', R)</text>
     <rect x="275" y="252" width="210" height="30" rx="8" fill="#8A1428"/>
-    <text x="380" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">1. Lee → 2. Escribe → 3. Mueve</text>
+    <text x="380" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">1. Lee -> 2. Escribe -> 3. Mueve</text>
   </g>
 </svg>`,
   },
@@ -239,32 +239,32 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 540" width="840" height="540">
   <rect width="840" height="540" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="792" height="68" rx="14" fill="#8A1428"/>
-  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">ACTIVACIÓN DE SABERES: CONJUNTOS NUMÉRICOS (N ⊂ Z ⊂ Q ⊂ R)</text>
-  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">De contar elementos discretos (N) a medir magnitudes continuas (R) y discretizarlas en binario</text>
+  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">ACTIVACION DE SABERES: CONJUNTOS NUMERICOS (N c Z c Q c R)</text>
+  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">De contar elementos discretos (N) a medir magnitudes continuas (R) y discretizarlas</text>
 
   <!-- Conjunto R -->
   <rect x="24" y="106" width="792" height="408" rx="18" fill="#FFFFFF" stroke="#0B0F19" stroke-width="3"/>
-  <text x="48" y="138" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#0B0F19">R · Números Reales ( R = Q  union  I ) — Usados para medir (continuos)</text>
+  <text x="48" y="138" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#0B0F19">R - Numeros Reales ( R = Q union I ) - Continuos para medir</text>
 
   <!-- Racionales Q -->
   <rect x="46" y="156" width="490" height="334" rx="16" fill="#E0F3FA" stroke="#0099E6" stroke-width="3"/>
-  <text x="68" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0099E6">Q · Racionales = { a/b | a, b en Z, b != 0 }</text>
-  <text x="68" y="212" font-family="monospace" font-size="14" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333... (periódico)</text>
+  <text x="68" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0099E6">Q - Racionales = { a/b | a, b en Z, b != 0 }</text>
+  <text x="68" y="212" font-family="monospace" font-size="14" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333... (periodico)</text>
 
   <!-- Enteros Z -->
   <rect x="74" y="232" width="434" height="236" rx="14" fill="#FFFFFF" stroke="#1D5CFF" stroke-width="2.5"/>
-  <text x="96" y="264" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#1D5CFF">Z · Enteros = { ..., -3, -2, -1, 0, 1, 2, 3, ... }</text>
+  <text x="96" y="264" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#1D5CFF">Z - Enteros = { ..., -3, -2, -1, 0, 1, 2, 3, ... }</text>
   <text x="96" y="288" font-family="monospace" font-size="14" fill="#334155">Complemento a 2 / Signo-Magnitud en registros enteros</text>
 
   <!-- Naturales N -->
   <rect x="104" y="308" width="374" height="138" rx="12" fill="#8A1428"/>
-  <text x="291" y="348" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">N · Naturales = { 1, 2, 3, 4, ... }</text>
+  <text x="291" y="348" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">N - Naturales = { 1, 2, 3, 4, ... }</text>
   <text x="291" y="378" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Usados para contar unidades discretas</text>
   <text x="291" y="408" text-anchor="middle" font-family="monospace" font-size="14" font-weight="bold" fill="#FFFFFF">Base 2 directa: 13(dec) = 1101(bin)</text>
 
   <!-- Irracionales I -->
   <rect x="556" y="156" width="238" height="334" rx="16" fill="#FFF7ED" stroke="#FE9800" stroke-width="3"/>
-  <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">I · Irracionales</text>
+  <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">I - Irracionales</text>
   <text x="675" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">No pueden expresarse</text>
   <text x="675" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">como fracción a/b.</text>
   <text x="675" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">pi ~ 3.14159265...</text>
@@ -288,8 +288,8 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540" width="860" height="540">
   <rect width="860" height="540" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="68" rx="14" fill="#8A1428"/>
-  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">PASO 4 · CODIFICACIÓN DE CARACTERES EN CÓDIGO ASCII (8 BITS / 1 BYTE)</text>
-  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Algoritmo directo (Texto → Decimal → Binario de 8 bits) y proceso inverso (Trama binaria → Texto)</text>
+  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">PASO 4: CODIFICACION DE CARACTERES EN CODIGO ASCII (8 BITS / 1 BYTE)</text>
+  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Algoritmo directo (Texto -> Decimal -> Binario de 8 bits) y proceso inverso (Trama binaria -> Texto)</text>
 
   <!-- Tabla visual de ejemplo "UAO" -->
   <g transform="translate(24, 110)">
@@ -353,7 +353,7 @@ export function generateCustomConceptSvg(params: {
   const safeTitle = escapeXml(params.title.slice(0, 58));
   const safeSub = escapeXml(params.subtitle.slice(0, 90));
   const safeFormula = escapeXml(
-    params.formula || "f(n) : Dominio Discreto → Representación Binaria {0, 1}*"
+    params.formula || "f(n) : Dominio Discreto -> Representacion Binaria {0, 1}*"
   );
   const rawItems = (params.highlights || []).filter(Boolean);
   const defaultItems = [
