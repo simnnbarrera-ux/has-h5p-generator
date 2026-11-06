@@ -35,11 +35,11 @@ El compilador necesita el **paquete original de plantilla UAO** usado por los la
 
 El selector incluye 20 diseños agrupados en Facultad, Marca UAO y Composiciones. Los previews estáticos viven en `public/uao-templates/`; no contienen credenciales ni paquetes H5P.
 
-Las cinco bases completas Facultad se guardan en el bucket **privado** `has-h5p-store` con estas rutas: `templates/uao/facultad/facultad-1.h5p` a `facultad-5.h5p`. Las cinco se probaron con el compilador y ofrecen 34 diapositivas base. El servidor elige la ruta mediante `selectedTemplateId`; no se expone una URL pública.
+Las cinco bases completas Facultad se guardan en el bucket **privado** `has-h5p-store` con estas rutas: `templates/uao/facultad/facultad-1.h5p` a `facultad-5.h5p`. Las cinco se probaron con el compilador y ofrecen 34 diapositivas base. El servidor elige la ruta mediante `baseTemplateId`, separado de la paleta `selectedTemplateId`; no se expone una URL pública.
 
-Marca UAO y Composiciones incluyen muestras de nueve diapositivas, no bases compatibles con las 19 interacciones del generador. Para evitar paquetes incompletos o interacciones rotas, su vista previa se ofrece en el selector y su paleta se adapta a la base H5P completa; sus paquetes de muestra no se cargan ni se usan para compilar.
+En la aplicación, el Paso 1 selecciona una paleta sin cambiar la estructura. En el Paso 4 el profesor puede seleccionar una de las cinco bases H5P Facultad para el paquete completo y, de forma independiente, aplicar por diapositiva cualquiera de las diez composiciones extraídas del ZIP. Estas diez composiciones se incorporan como formas H5P reales sobre el layout pedagógico equivalente, preservando el texto y las interacciones; los paquetes de muestra de nueve diapositivas no se usan para compilar.
 
-No se requiere una migración SQL adicional: `selectedTemplateId` se conserva dentro de `project_spec`. En otro entorno, vuelve a cargar las cinco bases desde el ZIP original con `CONFIRM_UPLOAD_UAO_TEMPLATES=1`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` configuradas en el entorno local seguro:
+No se requiere una migración SQL adicional: `selectedTemplateId`, `baseTemplateId` y los `compositionId` de cada slide se conservan dentro de `project_spec`. Los proyectos previos que no tienen `baseTemplateId` siguen funcionando; el servidor conserva una base Facultad compatible. En otro entorno, vuelve a cargar las cinco bases desde el ZIP original con `CONFIRM_UPLOAD_UAO_TEMPLATES=1`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` configuradas en el entorno local seguro:
 
 ```bash
 CONFIRM_UPLOAD_UAO_TEMPLATES=1 \

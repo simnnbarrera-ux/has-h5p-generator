@@ -13,6 +13,12 @@ import {
 interface PresentationTemplateGalleryProps {
   selectedTemplateId?: string;
   onSelect: (templateId: string) => void;
+  visibleGroups?: UaoTemplateGroup[];
+  mode?: "palette" | "base" | "composition";
+  heading?: string;
+  description?: string;
+  actionLabel?: string;
+  emptySelectionMessage?: string;
 }
 
 const GROUPS: Array<{ id: UaoTemplateGroup; label: string }> = [
@@ -57,9 +63,17 @@ function TemplatePreview({
 export default function PresentationTemplateGallery({
   selectedTemplateId,
   onSelect,
+  visibleGroups,
+  mode = "palette",
+  heading,
+  description,
+  actionLabel,
+  emptySelectionMessage,
 }: PresentationTemplateGalleryProps) {
+  const allowedGroups = visibleGroups?.length ? visibleGroups : GROUPS.map((group) => group.id);
+  const selectedGroup = getUaoTemplate(selectedTemplateId)?.group;
   const [activeGroup, setActiveGroup] = useState<UaoTemplateGroup>(
-    () => getUaoTemplate(selectedTemplateId)?.group || "facultad"
+    () => (selectedGroup && allowedGroups.includes(selectedGroup) ? selectedGroup : allowedGroups[0] || "facultad")
   );
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
   const closePreviewRef = useRef<HTMLButtonElement>(null);
@@ -67,8 +81,8 @@ export default function PresentationTemplateGallery({
   const selectedTemplate = getUaoTemplate(selectedTemplateId);
   const previewTemplate = getUaoTemplate(previewTemplateId);
   const visibleTemplates = useMemo(
-    () => UAO_TEMPLATE_CATALOG.filter((template) => template.group === activeGroup),
-    [activeGroup]
+    () => UAO_TEMPLATE_CATALOG.filter((template) => allowedGroups.includes(template.group) && template.group === activeGroup),
+    [activeGroup, allowedGroups]
   );
 
   useEffect(() => {
@@ -94,28 +108,32 @@ export default function PresentationTemplateGallery({
         <div>
           <h3 id="uao-template-gallery-title" className="flex items-center gap-2 text-sm font-bold text-slate-900">
             <Layers className="h-4 w-4 text-[#8A1428]" aria-hidden="true" />
-            Diseños de presentación
+            {heading || (mode === "palette" ? "Paleta y marca institucional" : mode === "base" ? "Plantilla base H5P" : "Composición de la diapositiva")}
           </h3>
           <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-600">
-            Explora las 20 propuestas antes de elegir. Las plantillas de Facultad usan una base H5P completa; Marca y Composiciones adaptan la paleta del diseño de muestra a la base compatible para conservar las diapositivas y sus interacciones.
+            {description || (mode === "palette"
+              ? "Elige la identidad de color. La base H5P y la organización de las diapositivas se configuran por separado."
+              : mode === "base"
+                ? "Elige qué paquete H5P institucional sirve como base global de la presentación."
+                : "Elige una de las composiciones reales del ZIP. Se aplica su distribución visual al layout pedagógico equivalente, sin perder el contenido ni las interacciones.")}
           </p>
         </div>
         <div className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          <span className="font-semibold text-slate-700">Diseño activo: </span>
+          <span className="font-semibold text-slate-700">{mode === "palette" ? "Paleta activa: " : mode === "base" ? "Base activa: " : "Composición activa: "}</span>
           <span className="font-bold text-[#8A1428]">
             {selectedTemplate?.theme.shortName || "Diseño anterior"}
           </span>
         </div>
       </div>
 
-      {!selectedTemplate && (
+      {!selectedTemplate && emptySelectionMessage && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
-          Este recurso conserva una configuración de diseño anterior al catálogo. Puedes mantenerla o elegir una de estas propuestas; el contenido no se modifica al cambiar el diseño.
+          {emptySelectionMessage}
         </p>
       )}
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar diseños por categoría">
-        {GROUPS.map((group) => {
+        {GROUPS.filter((group) => allowedGroups.includes(group.id)).map((group) => {
           const count = UAO_TEMPLATE_CATALOG.filter((template) => template.group === group.id).length;
           const isActive = activeGroup === group.id;
           return (
@@ -185,9 +203,11 @@ export default function PresentationTemplateGallery({
                 </div>
 
                 <p className="min-h-8 text-[11px] leading-relaxed text-slate-600">
-                  {template.generationMode === "h5p-base"
-                    ? "Plantilla H5P completa · 34 diapositivas"
-                  : "Paleta adaptable · base H5P completa"}
+                  {mode === "palette"
+                    ? "Solo cambia colores y tipografía; no cambia la estructura."
+                    : mode === "base"
+                      ? "Paquete H5P completo · define la base global del recurso"
+                      : "Composición visual real · formas del paquete H5P de referencia"}
                 </p>
 
                 <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
@@ -212,7 +232,7 @@ export default function PresentationTemplateGallery({
                         : "bg-[#8A1428] text-white hover:bg-[#6F1020]"
                     }`}
                   >
-                    {isSelected ? "Seleccionada" : "Usar este diseño"}
+                    {isSelected ? "Seleccionada" : actionLabel || (mode === "palette" ? "Usar esta paleta" : mode === "base" ? "Usar esta base" : "Usar esta composición")}
                   </button>
                 </div>
               </div>
@@ -272,7 +292,7 @@ export default function PresentationTemplateGallery({
                   }}
                   className="rounded-xl bg-[#8A1428] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#6F1020] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A1428]/50"
                 >
-                  Usar este diseño
+                  {actionLabel || (mode === "palette" ? "Usar esta paleta" : mode === "base" ? "Usar esta base" : "Usar esta composición")}
                 </button>
               </div>
             </div>

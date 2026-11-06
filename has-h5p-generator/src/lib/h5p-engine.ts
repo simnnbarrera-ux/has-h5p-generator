@@ -13,9 +13,11 @@ import {
   findSlideLayout,
 } from "./h5p-catalog";
 import { getUaoTemplate } from "./uao-template-catalog";
+import { getUaoCompositionShapeElements } from "./uao-composition-layouts";
+import type { CustomDiagramSpec } from "./custom-diagram";
 import {
   BUILTIN_RETO11_SVGS,
-  generateCustomConceptSvg,
+  generateCustomDiagramSvg,
   GeneratedSvgAsset,
 } from "./svg-diagrams";
 import { supportsVisualSpace } from "./visual-space";
@@ -98,6 +100,7 @@ export interface HasSlideSpec {
   templateSlide: number; // 1..32 from fiuao-6-215
   menuTitle: string; // max 35 chars per UAO spec
   titleBlack: string;
+  compositionId?: string;
   titleAccent?: string;
   subtitle?: string;
   paragraphs: string[];
@@ -112,12 +115,7 @@ export interface HasSlideSpec {
     targetKey?: string;
   }>;
   svgDiagramId?: string;
-  customSvg?: {
-    title: string;
-    subtitle: string;
-    formula?: string;
-    highlights: string[];
-  };
+  customSvg?: CustomDiagramSpec;
   reserveVisualSpace?: boolean;
   imagePendingDescription?: string;
   apaReferences?: string[];
@@ -139,6 +137,7 @@ export interface HasProjectSpec {
   activityNumber: number;
   templateId: string;
   selectedTemplateId?: string;
+  baseTemplateId?: string;
   defaultVoice: string;
   fontFamily?: string;
   globalFontScale?: "compact" | "normal" | "large";
@@ -1280,6 +1279,11 @@ function compileSlideFromSpec(
       : layout.slideNumber;
   const slideNum = Math.min(Math.max(targetSlideNum, 1), 32);
   const raw = JSON.parse(JSON.stringify(templateSlides[slideNum - 1]));
+  const compositionShapes = getUaoCompositionShapeElements(
+    slideSpec.compositionId,
+    layout.templateNumber,
+    tmpl.colors
+  );
   const fontStack = resolveFontCssStack(projectFontId || tmpl.recommendedFont);
   const scale = slideSpec.fontScale || projectFontScale || "normal";
   const boxMode = slideSpec.boxLayout || "expanded";
@@ -1297,9 +1301,10 @@ function compileSlideFromSpec(
   if (diagramKey && BUILTIN_RETO11_SVGS[diagramKey]) {
     svgAsset = BUILTIN_RETO11_SVGS[diagramKey];
   } else if (slideSpec.customSvg) {
-    svgAsset = generateCustomConceptSvg({
+    svgAsset = generateCustomDiagramSvg({
       id: slideSpec.id,
       ...slideSpec.customSvg,
+      theme: tmpl.colors,
     });
   }
   if (svgAsset) {
@@ -2330,7 +2335,7 @@ function compileSlideFromSpec(
       finalElements.push(raw.elements[i]);
     }
   }
-  raw.elements = [...finalElements, ...additions];
+  raw.elements = [...compositionShapes, ...finalElements, ...additions];
   return raw;
 }
 

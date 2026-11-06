@@ -3,6 +3,9 @@
 // Identidad Visual UAO (#8A1428 Granate, #0099E6 Azul Facultad, #E0F3FA Fondo)
 // =============================================================================
 
+import type { CustomDiagramSpec } from "./custom-diagram";
+import type { PresentationTemplateColors } from "./h5p-catalog";
+
 export interface GeneratedSvgAsset {
   filename: string;
   svgContent: string;
@@ -404,5 +407,208 @@ export function generateCustomConceptSvg(params: {
     width: 840,
     height: 520,
     apaCitation: `Equipo 35 HAS & Campus Digital UAO. (2026). ${params.title} [Esquema gráfico]. Universidad Autónoma de Occidente.`,
+  };
+}
+
+function wrapDiagramText(value: string, maxChars: number): string[] {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (candidate.length > maxChars && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, 3);
+}
+
+function diagramText(
+  x: number,
+  y: number,
+  value: string,
+  options: { maxChars?: number; fontSize?: number; fill?: string; anchor?: "start" | "middle" | "end"; weight?: number } = {}
+): string {
+  const lines = wrapDiagramText(value, options.maxChars ?? 28);
+  const fontSize = options.fontSize ?? 18;
+  return `<text x="${x}" y="${y}" text-anchor="${options.anchor ?? "middle"}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${options.weight ?? 500}" fill="${options.fill ?? "#0F172A"}">${lines.map((line, index) => `<tspan x="${x}" dy="${index === 0 ? 0 : fontSize + 5}">${escapeXml(line)}</tspan>`).join("")}</text>`;
+}
+
+function nodeShape(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  detail: string | undefined,
+  type: string,
+  colors: PresentationTemplateColors,
+  index: number
+): string {
+  const fill = type === "start" || type === "end" ? colors.primary : index % 2 === 0 ? colors.cardBg : colors.highlightBg;
+  const stroke = index % 2 === 0 ? colors.primary : colors.accent;
+  const centerX = x + width / 2;
+  const centerY = y + height / 2;
+  const shape = type === "decision"
+    ? `<polygon points="${centerX},${y} ${x + width},${centerY} ${centerX},${y + height} ${x},${centerY}" fill="${fill}" stroke="${stroke}" stroke-width="4"/>`
+    : `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${type === "start" || type === "end" ? 38 : 18}" fill="${fill}" stroke="${stroke}" stroke-width="4"/>`;
+  const textColor = type === "start" || type === "end" ? colors.badgeText : colors.textPrimary;
+  const labelLines = wrapDiagramText(label, 22);
+  const labelStartY = detail ? centerY - 8 - ((labelLines.length - 1) * 12) : centerY + 7 - ((labelLines.length - 1) * 12);
+  const labelXml = diagramText(centerX, labelStartY, label, { maxChars: 22, fontSize: 19, fill: textColor, weight: 700 });
+  const detailXml = detail
+    ? diagramText(centerX, labelStartY + labelLines.length * 24, detail, { maxChars: 30, fontSize: 14, fill: textColor })
+    : "";
+  return `<g>${shape}${labelXml}${detailXml}</g>`;
+}
+
+function flowDiagram(params: CustomDiagramSpec, colors: PresentationTemplateColors): string {
+  const nodes = params.nodes.slice(0, 8);
+  const columns = Math.min(nodes.length, 4);
+  const cellWidth = 186;
+  const cellHeight = 104;
+  const startX = 72;
+  const startY = nodes.length <= 4 ? 280 : 218;
+  const positions = nodes.map((_, index) => ({
+    x: startX + (index % columns) * 218,
+    y: startY + Math.floor(index / columns) * 172,
+  }));
+  const nodeIndex = new Map(nodes.map((node, index) => [node.id, index]));
+  const edgesXml = params.edges.map((edge) => {
+    const fromIndex = nodeIndex.get(edge.from);
+    const toIndex = nodeIndex.get(edge.to);
+    if (fromIndex === undefined || toIndex === undefined) return "";
+    const from = positions[fromIndex];
+    const to = positions[toIndex];
+    const x1 = from.x + cellWidth / 2;
+    const y1 = from.y + cellHeight / 2;
+    const x2 = to.x + cellWidth / 2;
+    const y2 = to.y + cellHeight / 2;
+    const label = edge.label
+      ? diagramText((x1 + x2) / 2, (y1 + y2) / 2 - 8, edge.label, { maxChars: 18, fontSize: 13, fill: colors.textMuted })
+      : "";
+    return `<g><path d="M ${x1} ${y1} L ${x2} ${y2}" fill="none" stroke="${colors.accent}" stroke-width="5" marker-end="url(#arrow)"/>${label}</g>`;
+  }).join("");
+  const nodesXml = nodes.map((node, index) => nodeShape(
+    positions[index].x,
+    positions[index].y,
+    cellWidth,
+    cellHeight,
+    node.label,
+    node.detail,
+    node.type,
+    colors,
+    index
+  )).join("");
+  return `${edgesXml}${nodesXml}`;
+}
+
+function comparisonDiagram(params: CustomDiagramSpec, colors: PresentationTemplateColors): string {
+  const nodes = params.nodes.slice(0, 4);
+  const columns = Math.min(2, nodes.length);
+  const cardWidth = 360;
+  const cardX = [94, 546];
+  const headerY = 205;
+  const cards = nodes.slice(0, columns).map((node, index) => {
+    const x = cardX[index];
+    const fill = index === 0 ? colors.highlightBg : colors.cardBg;
+    const bullets = (node.detail ? [node.detail, ...params.highlights.slice(index, index + 2)] : params.highlights.slice(index * 2, index * 2 + 3)).filter(Boolean).slice(0, 3);
+    return `<g><rect x="${x}" y="${headerY}" width="${cardWidth}" height="282" rx="22" fill="${fill}" stroke="${index === 0 ? colors.primary : colors.accent}" stroke-width="4"/><rect x="${x}" y="${headerY}" width="${cardWidth}" height="72" rx="22" fill="${index === 0 ? colors.primary : colors.accent}"/>${diagramText(x + cardWidth / 2, headerY + 46, node.label, { maxChars: 27, fontSize: 22, fill: colors.badgeText, weight: 700 })}${bullets.map((item, bulletIndex) => `<circle cx="${x + 34}" cy="${headerY + 122 + bulletIndex * 55}" r="7" fill="${index === 0 ? colors.primary : colors.accent}"/>${diagramText(x + 58, headerY + 128 + bulletIndex * 55, item, { maxChars: 31, fontSize: 16, fill: colors.textPrimary, anchor: "start" })}`).join("")}</g>`;
+  }).join("");
+  return cards;
+}
+
+function timelineDiagram(params: CustomDiagramSpec, colors: PresentationTemplateColors): string {
+  const nodes = params.nodes.slice(0, 6);
+  const startX = 104;
+  const gap = nodes.length > 1 ? 792 / (nodes.length - 1) : 0;
+  const axisY = 350;
+  const axis = `<line x1="${startX}" y1="${axisY}" x2="${startX + 792}" y2="${axisY}" stroke="${colors.primary}" stroke-width="7" stroke-linecap="round"/>`;
+  return axis + nodes.map((node, index) => {
+    const x = startX + index * gap;
+    const above = index % 2 === 0;
+    const boxY = above ? 190 : 404;
+    const boxX = Math.max(32, Math.min(808, x - 80));
+    return `<g><line x1="${x}" y1="${above ? axisY - 8 : axisY + 8}" x2="${x}" y2="${above ? boxY + 104 : boxY}" stroke="${colors.accent}" stroke-width="4"/><circle cx="${x}" cy="${axisY}" r="15" fill="${colors.accent}" stroke="#FFFFFF" stroke-width="5"/><rect x="${boxX}" y="${boxY}" width="160" height="104" rx="16" fill="${colors.cardBg}" stroke="${index % 2 === 0 ? colors.primary : colors.accent}" stroke-width="3"/>${diagramText(boxX + 80, boxY + 38, node.label, { maxChars: 18, fontSize: 17, weight: 700 })}${node.detail ? diagramText(boxX + 80, boxY + 71, node.detail, { maxChars: 22, fontSize: 13, fill: colors.textMuted }) : ""}</g>`;
+  }).join("");
+}
+
+function conceptDiagram(params: CustomDiagramSpec, colors: PresentationTemplateColors): string {
+  const nodes = params.nodes.slice(0, 6);
+  const center = { x: 500, y: 350 };
+  const radiusX = 338;
+  const radiusY = 125;
+  const positions = nodes.map((_, index) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 * index) / nodes.length;
+    return { x: center.x + Math.cos(angle) * radiusX, y: center.y + Math.sin(angle) * radiusY };
+  });
+  const edges = params.edges.map((edge) => {
+    const from = positions[nodes.findIndex((node) => node.id === edge.from)];
+    const to = positions[nodes.findIndex((node) => node.id === edge.to)];
+    if (!from || !to) return "";
+    return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="${colors.cardBorder}" stroke-width="5"/>`;
+  }).join("");
+  const nodeXml = nodes.map((node, index) => nodeShape(
+    positions[index].x - 88,
+    positions[index].y - 51,
+    176,
+    102,
+    node.label,
+    node.detail,
+    index === 0 ? "start" : node.type,
+    colors,
+    index
+  )).join("");
+  return `${edges}${nodeXml}`;
+}
+
+function graphDiagram(params: CustomDiagramSpec, colors: PresentationTemplateColors): string {
+  const graph = params.graph!;
+  const left = 140;
+  const top = 220;
+  const width = 720;
+  const height = 245;
+  const pointX = (x: number) => left + ((x - graph.xMin) / (graph.xMax - graph.xMin)) * width;
+  const pointY = (y: number) => top + height - ((y - graph.yMin) / (graph.yMax - graph.yMin)) * height;
+  const grid = Array.from({ length: 5 }, (_, index) => {
+    const x = left + (width * index) / 4;
+    const y = top + (height * index) / 4;
+    return `<line x1="${x}" y1="${top}" x2="${x}" y2="${top + height}" stroke="${colors.cardBorder}" stroke-width="2"/><line x1="${left}" y1="${y}" x2="${left + width}" y2="${y}" stroke="${colors.cardBorder}" stroke-width="2"/>`;
+  }).join("");
+  const path = graph.points.map((point, index) => `${index === 0 ? "M" : "L"} ${pointX(point.x)} ${pointY(point.y)}`).join(" ");
+  const points = graph.points.map((point) => `<circle cx="${pointX(point.x)}" cy="${pointY(point.y)}" r="8" fill="${colors.accent}" stroke="#FFFFFF" stroke-width="3"/>`).join("");
+  const xTicks = [graph.xMin, graph.xMax].map((value) => diagramText(pointX(value), top + height + 26, String(value), { fontSize: 14, fill: colors.textMuted })).join("");
+  const yTicks = [graph.yMin, graph.yMax].map((value) => diagramText(left - 30, pointY(value) + 5, String(value), { fontSize: 14, fill: colors.textMuted, anchor: "end" })).join("");
+  return `${grid}<path d="${path}" fill="none" stroke="${colors.primary}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>${points}${xTicks}${yTicks}${diagramText(left + width / 2, 520, graph.xLabel, { fontSize: 16, weight: 700, fill: colors.textPrimary })}<text x="34" y="340" transform="rotate(-90 34 340)" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="${colors.textPrimary}">${escapeXml(graph.yLabel)}</text>`;
+}
+
+export function generateCustomDiagramSvg(params: CustomDiagramSpec & { id: string; theme: PresentationTemplateColors }): GeneratedSvgAsset {
+  const colors = params.theme;
+  const diagramContent = params.kind === "flow"
+    ? flowDiagram(params, colors)
+    : params.kind === "comparison"
+      ? comparisonDiagram(params, colors)
+      : params.kind === "timeline"
+        ? timelineDiagram(params, colors)
+        : params.kind === "graph"
+          ? graphDiagram(params, colors)
+          : conceptDiagram(params, colors);
+  const title = escapeXml(params.title);
+  const subtitle = escapeXml(params.subtitle);
+  const formula = params.formula ? `<rect x="110" y="150" width="780" height="32" rx="12" fill="${colors.highlightBg}"/><text x="500" y="171" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="${colors.textPrimary}">${escapeXml(params.formula.slice(0, 100))}</text>` : "";
+  const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600"><defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M 0 0 L 12 6 L 0 12 z" fill="${colors.accent}"/></marker></defs><rect width="1000" height="600" rx="24" fill="${colors.background}"/><rect x="32" y="28" width="936" height="112" rx="20" fill="${colors.primary}"/><text x="66" y="78" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="${colors.badgeText}">${title}</text><text x="66" y="116" font-family="Arial, sans-serif" font-size="18" fill="${colors.badgeText}">${subtitle}</text><rect x="38" y="160" width="924" height="390" rx="24" fill="${colors.cardBg}" stroke="${colors.cardBorder}" stroke-width="3"/>${diagramContent}${formula}</svg>`;
+  const safeId = params.id.replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 80) || "diagram";
+
+  return {
+    filename: `has-custom-${safeId}.png`,
+    svgContent,
+    altText: `Diagrama ${params.kind}: ${params.title}. ${params.subtitle}`,
+    width: 1000,
+    height: 600,
+    apaCitation: `Equipo 35 HAS & Campus Digital UAO. (2026). ${params.title} [Diagrama ${params.kind}]. Universidad Autónoma de Occidente.`,
   };
 }

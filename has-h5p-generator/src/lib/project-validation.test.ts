@@ -45,6 +45,28 @@ test("validateProjectSpec preserves the per-slide visual-space toggle", () => {
   assert.throws(() => validateProjectSpec(invalid), /reserveVisualSpace no es válido/);
 });
 
+test("validateProjectSpec accepts only the ten composition IDs for slide layouts", () => {
+  const valid = structuredClone(minimalSpec);
+  valid.slides[0].compositionId = "composicion-07";
+  assert.equal(validateProjectSpec(valid).slides[0].compositionId, "composicion-07");
+
+  const invalid = structuredClone(minimalSpec);
+  invalid.slides[0].compositionId = "facultad-1";
+  assert.throws(() => validateProjectSpec(invalid), /composición.*no es válida/);
+});
+
+test("validateProjectSpec upgrades legacy customSvg data to a safe concept diagram", () => {
+  const legacy = structuredClone(minimalSpec);
+  legacy.slides[0].customSvg = {
+    title: "Tema legado",
+    subtitle: "Descripción",
+    highlights: ["Idea uno", "Idea dos"],
+  };
+  const normalized = validateProjectSpec(legacy).slides[0].customSvg;
+  assert.equal(normalized?.kind, "concept");
+  assert.equal(normalized?.nodes.length, 2);
+});
+
 test("validateProjectSpec rejects active or credential-bearing links", () => {
   const unsafe = structuredClone(minimalSpec);
   unsafe.slides[0] = {

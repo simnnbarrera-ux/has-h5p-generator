@@ -1,5 +1,5 @@
 export type UaoTemplateGroup = "facultad" | "marca" | "composicion";
-export type UaoTemplateGenerationMode = "h5p-base" | "adapted-theme";
+export type UaoTemplateGenerationMode = "h5p-base" | "adapted-theme" | "composition-overlay";
 
 export interface UaoTemplateColors {
   primary: string;
@@ -87,8 +87,10 @@ function entry(args: {
       ? `/uao-templates/composiciones/${args.id}.html#mini-1`
       : `/uao-templates/vistas-previas/${args.id}.png`;
   const compatibilityNote = isFaculty
-    ? "H5P completo compatible con el generador (34 diapositivas)."
-    : "El ZIP aporta un diseño de muestra de 9 diapositivas; se adapta su paleta al H5P completo para conservar los layouts e interacciones compatibles.";
+    ? "Base H5P completa de Facultad. Su paleta define la identidad visual y conserva las interacciones compatibles."
+    : args.group === "composicion"
+      ? "Composición real extraída del paquete H5P del ZIP: sus formas y distribución se aplican al layout equivalente de cada diapositiva generada."
+      : "Paleta e identidad visual de Marca UAO. Se aplica al H5P completo sin reemplazar su contenido ni sus interacciones.";
 
   return {
     id: args.id,
@@ -100,7 +102,11 @@ function entry(args: {
     ...(args.group === "composicion"
       ? { previewHtml: previewBase }
       : { previewImage: previewBase }),
-    generationMode: isFaculty ? "h5p-base" : "adapted-theme",
+    generationMode: isFaculty
+      ? "h5p-base"
+      : args.group === "composicion"
+        ? "composition-overlay"
+        : "adapted-theme",
     compatibilityNote,
     ...(isFaculty
       ? { h5pStoragePath: `templates/uao/facultad/${args.id}.h5p` }
@@ -326,4 +332,17 @@ export function getUaoTemplate(id?: string | null): UaoTemplateEntry | undefined
 
 export function isUaoTemplateId(value: unknown): value is string {
   return typeof value === "string" && UAO_TEMPLATE_CATALOG.some((template) => template.id === value);
+}
+
+export function isUaoCompositionId(value: unknown): value is string {
+  return typeof value === "string" && getUaoTemplate(value)?.group === "composicion";
+}
+
+export function isUaoPaletteId(value: unknown): value is string {
+  const group = typeof value === "string" ? getUaoTemplate(value)?.group : undefined;
+  return group === "facultad" || group === "marca";
+}
+
+export function isUaoBaseTemplateId(value: unknown): value is string {
+  return typeof value === "string" && getUaoTemplate(value)?.generationMode === "h5p-base";
 }

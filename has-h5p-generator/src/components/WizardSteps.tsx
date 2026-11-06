@@ -40,6 +40,7 @@ import {
 import TiltCard from "./TiltCard";
 import PresentationTemplateGallery from "./PresentationTemplateGallery";
 import { apiFetch } from "@/lib/api-client";
+import { buildH5pViewerUrl } from "@/lib/h5p-preview-url";
 import { supportsVisualSpace } from "@/lib/visual-space";
 
 interface WizardStepsProps {
@@ -279,7 +280,39 @@ export default function WizardSteps({
           : chosenTmpl.theme.recommendedFont,
       };
     });
-    showToast(`Diseño "${chosenTmpl.theme.shortName}" seleccionado.`);
+    showToast(`Paleta "${chosenTmpl.theme.shortName}" seleccionada.`);
+  };
+
+  const handleSelectBaseTemplate = (templateId: string) => {
+    const chosenTemplate = getUaoTemplate(templateId);
+    if (chosenTemplate?.generationMode !== "h5p-base") return;
+    setSpec((previous) => ({ ...previous, baseTemplateId: templateId }));
+    showToast(`Base H5P "${chosenTemplate.name}" seleccionada; la paleta se conserva.`);
+  };
+
+  const handleSelectSlideComposition = (compositionId: string) => {
+    const chosenComposition = getUaoTemplate(compositionId);
+    if (chosenComposition?.group !== "composicion") return;
+    setSpec((previous) => ({
+      ...previous,
+      slides: previous.slides.map((slide, index) => index === selectedSlideIndex
+        ? { ...slide, compositionId }
+        : slide),
+    }));
+    showToast(`Composición "${chosenComposition.theme.shortName}" aplicada a esta diapositiva.`);
+  };
+
+  const handleApplyCompositionToAll = () => {
+    const compositionId = spec.slides[selectedSlideIndex]?.compositionId;
+    if (!compositionId) {
+      showToast("Elige una composición para esta diapositiva antes de aplicarla a todas.");
+      return;
+    }
+    setSpec((previous) => ({
+      ...previous,
+      slides: previous.slides.map((slide) => ({ ...slide, compositionId })),
+    }));
+    showToast("La composición actual se aplicó a todas las diapositivas.");
   };
 
   /* ---------- Reconocimiento de voz para profesores ---------- */
@@ -412,12 +445,17 @@ export default function WizardSteps({
   /* ---------- SVG AI Generation with Gemini ---------- */
   const handleGenerateSvgAi = async () => {
     if (!svgPrompt.trim() || svgGenerating) return;
+    if (spec.slides.length >= 40) {
+      showToast("El proyecto ya alcanzó el máximo de 40 diapositivas.");
+      return;
+    }
     setSvgGenerating(true);
     try {
       const res = await apiFetch("/api/svg-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: svgPrompt.trim() }),
+        signal: AbortSignal.timeout(40_000),
       });
       const data: {
         customSvg?: HasSlideSpec["customSvg"];
@@ -427,20 +465,33 @@ export default function WizardSteps({
       if (!res.ok) {
         throw new Error(data.error || "Error generando SVG.");
       }
-      if (data.customSvg) {
-        setSpec((previous) => ({
-          ...previous,
-          slides: previous.slides.map((slide, index) => index === selectedSlideIndex
-            ? {
-                ...slide,
-                customSvg: data.customSvg,
-                imagePendingDescription: data.altText || slide.imagePendingDescription,
-                reserveVisualSpace: true,
-              }
-            : slide),
-        }));
-        setSvgPrompt("");
+      if (!data.customSvg) throw new Error("La IA no devolvió los datos del diagrama. Inténtalo de nuevo.");
+      const newSlideIndex = spec.slides.length;
+      const titleSlug = data.customSvg.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "svg";
+      const existingSlideIds = new Set(spec.slides.map((slide) => slide.id));
+      let uniqueSlideId = `diagram-${titleSlug}-${newSlideIndex + 1}`;
+      let idSuffix = 2;
+      while (existingSlideIds.has(uniqueSlideId)) {
+        uniqueSlideId = `diagram-${titleSlug}-${newSlideIndex + 1}-${idSuffix}`;
+        idSuffix += 1;
       }
+      const newSlide: HasSlideSpec = {
+        id: uniqueSlideId,
+        templateSlide: 9,
+        menuTitle: data.customSvg.title.slice(0, 35),
+        titleBlack: data.customSvg.title,
+        subtitle: data.customSvg.subtitle,
+        paragraphs: data.customSvg.highlights.slice(0, 2),
+        compositionId: spec.slides[selectedSlideIndex]?.compositionId || "composicion-01",
+        customSvg: data.customSvg,
+        imagePendingDescription: data.altText || `${data.customSvg.title}: ${data.customSvg.subtitle}`,
+        reserveVisualSpace: true,
+      };
+      setSpec((previous) => ({ ...previous, slides: [...previous.slides, newSlide] }));
+      setSelectedSlideIndex(newSlideIndex);
+      setReformulationSlideCount(Math.min(newSlideIndex + 1, MAX_REFORMULATION_SLIDES));
+      setSvgPrompt("");
+      showToast("Diagrama agregado como una nueva diapositiva visual. Revísalo en el Paso 4.");
     } catch (error: unknown) {
       console.error("Error generando SVG:", error);
       showToast(error instanceof Error ? error.message : "No fue posible generar el diagrama.");
@@ -691,9 +742,15 @@ export default function WizardSteps({
             </div>
 
             <PresentationTemplateGallery
-              key={spec.id}
+              key={`palette-${spec.id}`}
               selectedTemplateId={spec.selectedTemplateId}
               onSelect={handleSelectTemplate}
+              visibleGroups={["facultad", "marca"]}
+              mode="palette"
+              heading="Paso 1 · Colores e identidad institucional"
+              description="Elige entre diez paletas de Facultad o Marca UAO. Esto solo cambia colores y tipografía; la base H5P y la organización visual se eligen en el Paso 4."
+              actionLabel="Usar esta paleta"
+              emptySelectionMessage="Elige una paleta de Facultad o Marca UAO. La composición de las diapositivas no cambia al escoger colores."
             />
 
             {/* Prompt & STT Dictation Box */}
@@ -1099,21 +1156,25 @@ export default function WizardSteps({
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-3">
               <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                 <FileCode className="w-4 h-4 text-[#0099E6]" />
-                <span>Generador de Diagramas Técnicos SVG Vectoriales con IA</span>
+                <span>Generador de diagramas técnicos vectoriales con IA</span>
               </label>
+              <p className="text-[11px] leading-relaxed text-slate-600">
+                Describe un flujo, concepto, comparación, línea de tiempo o gráfico con datos. El resultado se agrega como una nueva diapositiva visual que puedes editar en el Paso 4.
+              </p>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                 <input
                   type="text"
                   value={svgPrompt}
                   onChange={(e) => setSvgPrompt(e.target.value)}
-                  placeholder="Ej. Diagrama de bloques de la unidad de control, o autómata finito con 3 estados..."
+                  aria-label="Describe el diagrama técnico que quieres generar"
+                  placeholder="Ej. Flujo de validación de una solicitud; velocidad constante de 3 m/s entre 0 y 10 s..."
                   className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0099E6]/30 focus:border-[#0099E6]"
                 />
                 <button
                   type="button"
                   onClick={handleGenerateSvgAi}
-                  disabled={svgGenerating || !svgPrompt.trim()}
+                  disabled={svgGenerating || !svgPrompt.trim() || spec.slides.length >= 40}
                   className="px-4 py-2.5 bg-[#0099E6] hover:bg-[#007acc] text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {svgGenerating ? (
@@ -1121,7 +1182,7 @@ export default function WizardSteps({
                   ) : (
                     <Sparkles className="w-4 h-4" />
                   )}
-                  <span>Generar SVG</span>
+                  <span>{svgGenerating ? "Generando…" : "Generar diagrama"}</span>
                 </button>
               </div>
             </div>
@@ -1247,6 +1308,27 @@ export default function WizardSteps({
             </div>
           </section>
 
+          <details className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-slate-900 marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8A1428]/30">
+              <span>Base global del paquete H5P · 5 plantillas de Facultad</span>
+              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-[#8A1428]">
+                {getUaoTemplate(spec.baseTemplateId)?.name || "Facultad 1"}
+              </span>
+            </summary>
+            <div className="border-t border-slate-100 px-5 pb-5 pt-2">
+              <PresentationTemplateGallery
+                key={`base-${spec.id}`}
+                selectedTemplateId={spec.baseTemplateId || "facultad-1"}
+                onSelect={handleSelectBaseTemplate}
+                visibleGroups={["facultad"]}
+                mode="base"
+                heading="Elige la plantilla base de Facultad"
+                description="Esta selección define el paquete H5P completo. No cambia la paleta elegida en el Paso 1 ni la composición individual de cada diapositiva."
+                actionLabel="Usar como base global"
+              />
+            </div>
+          </details>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Slides Navigation Strip */}
             <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-4 shadow-sm space-y-3">
@@ -1265,6 +1347,7 @@ export default function WizardSteps({
                       titleAccent: "Clave",
                       subtitle: "Subtítulo descriptivo",
                       paragraphs: ["Escribe el contenido aquí."],
+                      compositionId: "composicion-01",
                       reserveVisualSpace: false,
                     };
                     setSpec({ ...spec, slides: [...spec.slides, newSlide] });
@@ -1368,7 +1451,7 @@ export default function WizardSteps({
                     </div>
                   </div>
 
-                  {/* Banner de Diseño Global Activo */}
+                  {/* Banner de paleta institucional activa */}
                   {(() => {
                     const activeDesign =
                       getUaoTemplate(spec.selectedTemplateId)?.theme ||
@@ -1395,7 +1478,7 @@ export default function WizardSteps({
                           </div>
                           <div>
                             <span className="font-bold text-slate-800">
-                              Diseño Global: {activeDesign.name}
+                              Paleta global: {activeDesign.name}
                             </span>
                             <span className="text-[10px] text-slate-400 ml-2 hidden sm:inline">
                               Tipografía: {activeDesign.recommendedFont.replace("_", " ")}
@@ -1408,7 +1491,7 @@ export default function WizardSteps({
                           onClick={() => handleStepChange(1)}
                           className="text-[11px] text-[#8A1428] font-bold hover:underline cursor-pointer"
                         >
-                          Cambiar Plantilla Global
+                          Cambiar paleta (Paso 1)
                         </button>
                       </div>
                     );
@@ -1497,6 +1580,41 @@ export default function WizardSteps({
                       </section>
                     );
                   })()}
+
+                  <details className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold text-slate-900">
+                      <span>Composición visual de esta diapositiva</span>
+                      <span className="rounded-full bg-rose-50 px-3 py-1 text-[11px] font-bold text-[#8A1428]">
+                        {getUaoTemplate(spec.slides[selectedSlideIndex]?.compositionId)?.theme.shortName || "Elegir composición"}
+                      </span>
+                    </summary>
+                    <div className="mt-3 space-y-3 border-t border-slate-100 pt-3">
+                      <p className="text-[11px] leading-relaxed text-slate-600">
+                        Estas diez opciones cambian la distribución real —bloques, tarjetas, contornos, pestañas y otras formas— usando los layouts del ZIP. No son solo muestras de color.
+                      </p>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleApplyCompositionToAll}
+                          disabled={!spec.slides[selectedSlideIndex]?.compositionId}
+                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Aplicar esta composición a todas
+                        </button>
+                      </div>
+                      <PresentationTemplateGallery
+                        key={`composition-${spec.id}-${spec.slides[selectedSlideIndex]?.id}`}
+                        selectedTemplateId={spec.slides[selectedSlideIndex]?.compositionId}
+                        onSelect={handleSelectSlideComposition}
+                        visibleGroups={["composicion"]}
+                        mode="composition"
+                        heading="Composiciones incluidas en el ZIP"
+                        description="Cada vista previa corresponde a uno de los diez paquetes H5P de composición entregados. Al elegirla, se copia su capa visual segura al layout equivalente de esta diapositiva."
+                        actionLabel="Aplicar a esta diapositiva"
+                        emptySelectionMessage="Esta diapositiva todavía no tiene una composición del ZIP. Elige una tarjeta para aplicarla."
+                      />
+                    </div>
+                  </details>
 
                   {/* Inputs */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1677,10 +1795,7 @@ export default function WizardSteps({
               {!previewAccessLoading && !previewAccessError && previewReady && (
                 <iframe
                   key={previewKey}
-                  src={
-                    compilationResult?.previewPath ||
-                    `/preview-viewer/index.html?id=${encodeURIComponent(spec.id)}`
-                  }
+                  src={buildH5pViewerUrl(spec.id, previewKey)}
                   className="w-full h-[72vh] min-h-[500px] max-h-[740px] border-none"
                   title="Reproductor H5P en vivo"
                 />

@@ -35,6 +35,10 @@ test("cada diseño tiene paleta, vista previa y modo de generación coherente", 
       equal(item.generationMode, "h5p-base");
       equal(item.slideCount, 34);
       ok(item.h5pStoragePath?.startsWith("templates/uao/facultad/"));
+    } else if (item.group === "composicion") {
+      equal(item.generationMode, "composition-overlay");
+      equal(item.slideCount, 9);
+      equal(item.h5pStoragePath, undefined);
     } else {
       equal(item.generationMode, "adapted-theme");
       equal(item.slideCount, 9);
@@ -51,12 +55,27 @@ test("project validation conserva IDs oficiales y rechaza IDs arbitrarios", () =
   };
   const validated = validateProjectSpec(withTemplate);
   equal(validated.selectedTemplateId, "facultad-2");
+  equal(validated.baseTemplateId, "facultad-2");
+  const legacyComposition = validateProjectSpec({ ...withTemplate, selectedTemplateId: "composicion-03" });
+  equal(legacyComposition.selectedTemplateId, "facultad-1");
+  equal(legacyComposition.baseTemplateId, "facultad-1");
+  const independentPaletteAndBase = validateProjectSpec({
+    ...withTemplate,
+    selectedTemplateId: "plantilla-2",
+    baseTemplateId: "facultad-5",
+  });
+  equal(independentPaletteAndBase.selectedTemplateId, "plantilla-2");
+  equal(independentPaletteAndBase.baseTemplateId, "facultad-5");
   equal(isUaoTemplateId("composicion-10"), true);
   equal(isUaoTemplateId("../../private-file"), false);
   ok(getUaoTemplate("plantilla-4"));
 
   throws(
     () => validateProjectSpec({ ...withTemplate, selectedTemplateId: "../../private-file" }),
+    (error: unknown) => error instanceof ProjectValidationError
+  );
+  throws(
+    () => validateProjectSpec({ ...withTemplate, baseTemplateId: "plantilla-2" }),
     (error: unknown) => error instanceof ProjectValidationError
   );
   notEqual(validated.templateId, validated.selectedTemplateId);

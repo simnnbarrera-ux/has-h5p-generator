@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { H5P_FONT_OPTIONS } from "./h5p-catalog";
-import { isUaoTemplateId } from "./uao-template-catalog";
+import { DEFAULT_UAO_TEMPLATE_ID, isUaoBaseTemplateId, isUaoCompositionId, isUaoPaletteId, isUaoTemplateId } from './uao-template-catalog';
+import { normalizeCustomDiagram } from "./custom-diagram";
 import type { HasProjectSpec, HasSlideSpec, SlideInteractionSpec } from "./h5p-engine";
 
 const SAFE_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/;
@@ -226,6 +227,13 @@ function validateSlide(value: unknown, index: number): HasSlideSpec {
     titleBlack: cleanText(slide.titleBlack ?? "", `slides[${index}].titleBlack`, 300),
     paragraphs: textList(slide.paragraphs ?? [], `slides[${index}].paragraphs`, 100),
   };
+  if (slide.compositionId !== undefined) {
+    const compositionId = cleanText(slide.compositionId, `slides[${index}].compositionId`, 40);
+    if (!isUaoCompositionId(compositionId)) {
+      throw new ProjectValidationError(`La composición de la diapositiva ${index + 1} no es válida.`);
+    }
+    output.compositionId = compositionId;
+  }
   if (slide.key !== undefined) output.key = safeKey(slide.key, `slides[${index}].key`);
   for (const key of ["titleAccent", "subtitle", "highlightBox", "pendingNote", "imagePendingDescription"] as const) {
     if (slide[key] !== undefined) output[key] = cleanText(slide[key], `slides[${index}].${key}`, 2_000);
@@ -263,14 +271,11 @@ function validateSlide(value: unknown, index: number): HasSlideSpec {
     output.reserveVisualSpace = slide.reserveVisualSpace;
   }
   if (slide.customSvg !== undefined) {
-    const svg = slide.customSvg;
-    if (!svg || typeof svg !== "object") throw new ProjectValidationError(`customSvg de la diapositiva ${index + 1} no es válido.`);
-    output.customSvg = {
-      title: requiredText(svg.title, `slides[${index}].customSvg.title`, 120),
-      subtitle: cleanText(svg.subtitle, `slides[${index}].customSvg.subtitle`, 200),
-      ...(svg.formula !== undefined ? { formula: cleanText(svg.formula, `slides[${index}].customSvg.formula`, 400) } : {}),
-      highlights: textList(svg.highlights, `slides[${index}].customSvg.highlights`, 10, 300),
-    };
+    try {
+      output.customSvg = normalizeCustomDiagram(slide.customSvg, output.titleBlack || output.menuTitle);
+    } catch {
+      throw new ProjectValidationError(`El diagrama personalizado de la diapositiva ${index + 1} no tiene una estructura permitida.`);
+    }
   }
   if (slide.audioNarration !== undefined) {
     if (!slide.audioNarration || typeof slide.audioNarration !== "object") throw new ProjectValidationError(`La narración de la diapositiva ${index + 1} no es válida.`);
@@ -306,6 +311,16 @@ export function validateProjectSpec(value: unknown): HasProjectSpec {
     if (!isUaoTemplateId(selectedTemplateId)) {
       throw new ProjectValidationError("El diseño seleccionado no pertenece al catálogo UAO.");
     }
+    if (!isUaoPaletteId(selectedTemplateId)) {
+      selectedTemplateId = isUaoCompositionId(selectedTemplateId) ? DEFAULT_UAO_TEMPLATE_ID : undefined;
+    }
+  }
+  const legacyBaseTemplateId = isUaoBaseTemplateId(input.selectedTemplateId)
+    ? input.selectedTemplateId
+    : DEFAULT_UAO_TEMPLATE_ID;
+  const baseTemplateId = cleanText(input.baseTemplateId ?? legacyBaseTemplateId, "baseTemplateId", 40);
+  if (!isUaoBaseTemplateId(baseTemplateId)) {
+    throw new ProjectValidationError("La plantilla base H5P no pertenece a las cinco bases Facultad permitidas.");
   }
   const activityNumber = input.activityNumber === undefined ? 1 : input.activityNumber;
   if (!Number.isInteger(activityNumber) || activityNumber < 1 || activityNumber > 1_000) {
@@ -323,6 +338,7 @@ export function validateProjectSpec(value: unknown): HasProjectSpec {
     activityNumber,
     templateId,
     ...(selectedTemplateId ? { selectedTemplateId } : {}),
+    baseTemplateId,
     defaultVoice: cleanText(input.defaultVoice ?? "es-CO-SalomeNeural", "defaultVoice", 80),
     includeNavigationGuide: input.includeNavigationGuide ?? false,
     slides: input.slides.map(validateSlide),

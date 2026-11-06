@@ -455,6 +455,7 @@ export default function StudioApp() {
                 activityNumber: projects.length + 1,
                 templateId: "plantilla-1",
                 selectedTemplateId: "facultad-1",
+                baseTemplateId: "facultad-1",
                 defaultVoice: profile.preferred_voice || "es-CO-SalomeNeural",
                 includeNavigationGuide: false,
                 slides: [
@@ -464,6 +465,7 @@ export default function StudioApp() {
                     menuTitle: "Portada",
                     titleBlack: "Nueva Actividad",
                     titleAccent: "Interactiva",
+                    compositionId: "composicion-01",
                     subtitle: profile.faculty,
                     paragraphs: ["Bienvenido a la lección."],
                   },

@@ -192,10 +192,10 @@ export async function checkAndLogRateLimit(params: {
   };
 }
 
-export async function loadH5pTemplateBuffer(selectedTemplateId?: string): Promise<Buffer> {
-  const selectedTemplate = getUaoTemplate(selectedTemplateId);
-  if (selectedTemplateId && !selectedTemplate) {
-    throw new Error("El diseño solicitado no pertenece al catálogo UAO.");
+export async function loadH5pTemplateBuffer(baseTemplateId?: string): Promise<Buffer> {
+  const selectedTemplate = getUaoTemplate(baseTemplateId);
+  if (baseTemplateId && !selectedTemplate) {
+    throw new Error("La base H5P solicitada no pertenece al catálogo UAO.");
   }
 
   if (selectedTemplate?.h5pStoragePath) {

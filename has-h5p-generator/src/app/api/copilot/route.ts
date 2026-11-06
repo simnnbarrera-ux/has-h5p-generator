@@ -147,6 +147,10 @@ export async function POST(req: NextRequest) {
       try { spec = validateProjectSpec(parsed); } catch {
         return NextResponse.json({ error: "La IA generó un recurso con estructura no válida; inténtalo de nuevo." }, { status: 502 });
       }
+      spec.slides = spec.slides.map((slide) => ({
+        ...slide,
+        compositionId: slide.compositionId || "composicion-01",
+      }));
       return NextResponse.json({ spec, remainingToday: quota.remainingToday, dailyQuota: quota.dailyQuota }, {
         headers: { "Cache-Control": "private, no-store" },
       });
@@ -174,17 +178,19 @@ export async function POST(req: NextRequest) {
           || (slideKey ? sourceSlides.find((candidate) => candidate.key === slideKey) : undefined);
 
         if (original) {
-          for (const field of ["interaction", "links", "stepsCards", "apaReferences", "svgDiagramId", "customSvg", "imagePendingDescription"] as const) {
+          for (const field of ["interaction", "links", "stepsCards", "apaReferences", "svgDiagramId", "customSvg", "imagePendingDescription", "compositionId"] as const) {
             if (slide[field] === undefined && original[field] !== undefined) {
               slide[field] = original[field];
             }
           }
+          if (original.compositionId === undefined) delete slide.compositionId;
           if (slide.reserveVisualSpace === undefined) {
             slide.reserveVisualSpace = original.reserveVisualSpace
               ?? Boolean(original.svgDiagramId || original.customSvg || original.imagePendingDescription);
           }
-        } else if (slide.reserveVisualSpace === undefined) {
-          slide.reserveVisualSpace = false;
+        } else {
+          if (slide.reserveVisualSpace === undefined) slide.reserveVisualSpace = false;
+          slide.compositionId = "composicion-01";
         }
         if (!supportsVisualSpace(slide.templateSlide)) {
           slide.reserveVisualSpace = false;
