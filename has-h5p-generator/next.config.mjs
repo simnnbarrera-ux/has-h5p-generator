@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Nivel 1: Next.js serverExternalPackages (requerido para Edge Neural TTS WebSockets y Sharp)
+  // Next.js gestiona estos paquetes externos y los incluye en el file tracing
+  // de las funciones serverless de Vercel.
   serverExternalPackages: [
     'sharp',
     'edge-tts-universal',
@@ -9,18 +10,9 @@ const nextConfig = {
     'isomorphic-ws',
     'jszip',
   ],
-  // Nivel 2: Webpack externals directos (refuerzo obligatorio para evitar empaquetado de ws)
+  // Fallbacks solo para dependencias Node que no deben entrar al bundle cliente.
   webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals = [
-        ...(Array.isArray(config.externals) ? config.externals : []),
-        'sharp',
-        'ws',
-        'isomorphic-ws',
-        'edge-tts-universal',
-        'msedge-tts',
-      ];
-    } else {
+    if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
