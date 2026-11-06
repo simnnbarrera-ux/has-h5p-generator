@@ -10,6 +10,14 @@ const nextConfig = {
     'isomorphic-ws',
     'jszip',
   ],
+  // sharp se carga dinámicamente para mantener el motor cliente-seguro; NFT no
+  // puede inferir ese require, así que se incluye en la función que lo necesita.
+  outputFileTracingIncludes: {
+    '/api/h5p/build': [
+      './node_modules/sharp/**/*',
+      './node_modules/@img/**/*',
+    ],
+  },
   // Fallbacks solo para dependencias Node que no deben entrar al bundle cliente.
   webpack: (config, { isServer }) => {
     if (!isServer) {
