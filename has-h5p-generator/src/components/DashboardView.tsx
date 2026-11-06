@@ -108,11 +108,7 @@ export default function DashboardView({
 
   return (
     <div className="space-y-8 pb-12">
-      {readOnly && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" role="status">
-          <strong>Demo ficticia · solo lectura.</strong> Se muestran recursos públicos de ejemplo. No se inicia sesión ni se guardan datos; la edición, descarga, IA, voz y compilación están desactivadas.
-        </div>
-      )}
+      
 
       {/* 1. Header Profile & Metrics */}
       <section className="rounded-3xl border border-slate-200/90 bg-white p-6 md:p-8 shadow-sm">

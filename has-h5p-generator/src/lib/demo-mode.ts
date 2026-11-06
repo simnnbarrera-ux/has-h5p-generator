@@ -18,15 +18,24 @@ const DEMO_PROFILE_SLUGS: Record<DemoProfileName, string> = {
   Demo: "demo",
 };
 
-/** Synthetic client-only identity. It is never sent to Supabase or an API. */
+export const DEMO_CREDENTIALS: Record<DemoProfileName, { email: string; password: string }> = {
+  Alex: { email: "alex.has@has.com", password: "HasPrueba2026!" },
+  Hermaioni: { email: "hermaioni.has@has.com", password: "HasPrueba2026!" },
+  Simón: { email: "simon.has@has.com", password: "HasPrueba2026!" },
+  Oswaldo: { email: "oswaldo.has@has.com", password: "HasPrueba2026!" },
+  Demo: { email: "demo.has@has.com", password: "HasPrueba2026!" },
+};
+
+/** Perfil activo de prueba con cuota y permisos completos de creación y edición. */
 export function createDemoProfile(name: DemoProfileName): HasProfile {
+  const creds = DEMO_CREDENTIALS[name];
   return {
-    email: `${DEMO_PROFILE_SLUGS[name]}@demo.invalid`,
+    email: creds ? creds.email : `${DEMO_PROFILE_SLUGS[name]}@has.com`,
     full_name: name,
-    faculty: "Perfil ficticio de demostración",
-    program: "Muestras públicas UAO",
-    role: "professor",
-    daily_quota: 0,
+    faculty: "Facultad de Ingeniería y Ciencias Básicas",
+    program: "Campus Digital UAO",
+    role: name === "Simón" || name === "Hermaioni" || name === "Alex" ? "admin" : "professor",
+    daily_quota: 50,
     preferred_voice: "es-CO-SalomeNeural",
   };
 }

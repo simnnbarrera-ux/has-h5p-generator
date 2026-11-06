@@ -127,7 +127,7 @@ export default function StudioApp() {
       throw new Error("La respuesta no contiene un perfil autenticado.");
     }
 
-    const nextProjects = Array.isArray(data.projects) ? data.projects : [];
+    const nextProjects = Array.isArray(data.projects) && data.projects.length > 0 ? data.projects : getPublicSeedProjects();
     setProfile(data.profile);
     setProjects(nextProjects);
     return nextProjects;
@@ -136,7 +136,7 @@ export default function StudioApp() {
   const startDemoProfile = (name: DemoProfileName) => {
     demoModeRef.current = true;
     setIsDemoMode(true);
-    setIsAuthenticated(false);
+    setIsAuthenticated(true);
     setProfile(createDemoProfile(name));
     setProjects(getPublicSeedProjects());
     setLoadingProjects(false);
@@ -208,7 +208,7 @@ export default function StudioApp() {
   }, [activeView, hasStudioAccess, loadingProjects, navigateToRoute]);
 
   useEffect(() => {
-    if (!isAuthenticated || isDemoMode || loadingProjects || !routeProjectId) return;
+    if (!hasStudioAccess || loadingProjects || !routeProjectId) return;
     const requestedProject = projects.find((project) => project.id === routeProjectId);
     if (requestedProject?.project_spec && workingSpec.id !== routeProjectId) {
       const timer = window.setTimeout(() => {
@@ -223,17 +223,13 @@ export default function StudioApp() {
       }, 0);
       return () => window.clearTimeout(timer);
     }
-  }, [activeView, isAuthenticated, isDemoMode, loadingProjects, navigateToRoute, projects, routeProjectId, workingSpec.id]);
+  }, [activeView, hasStudioAccess, loadingProjects, navigateToRoute, projects, routeProjectId, workingSpec.id]);
 
   // Update dynamic font styling on body or wrapper
   const currentFontCss = resolveFontCssStack(workingSpec.fontFamily);
 
   // Open project in Wizard
   const handleOpenProjectInWizard = (projectId: string) => {
-    if (demoModeRef.current) {
-      handleOpenPreviewModal(projectId, "player", true);
-      return;
-    }
     const found = projects.find((p) => p.id === projectId);
     if (found && found.project_spec) {
       setWorkingSpec(found.project_spec);
@@ -291,7 +287,6 @@ export default function StudioApp() {
   const handleCompilePackage = async (
     overrideSpec?: HasProjectSpec
   ): Promise<any> => {
-    if (demoModeRef.current) return null;
     setCompiling(true);
     const targetSpec = overrideSpec || workingSpec;
     try {
@@ -512,14 +507,10 @@ export default function StudioApp() {
               }
             }}
             onOpenProject={(id) => {
-              if (isDemoMode) {
-                handleOpenPreviewModal(id, "player", true);
-                return;
-              }
-              if (!isAuthenticated) {
-                setIsAuthModalOpen(true);
-              } else {
+              if (hasStudioAccess) {
                 handleOpenProjectInWizard(id);
+              } else {
+                setIsAuthModalOpen(true);
               }
             }}
             onPreviewDemo={(id) => handleOpenPreviewModal(id, "player", true)}
@@ -534,10 +525,9 @@ export default function StudioApp() {
               projects={projects}
               profile={profile}
               isLoading={loadingProjects}
-              readOnly={isDemoMode}
+              readOnly={false}
             onOpenProject={(id) => handleOpenProjectInWizard(id)}
             onNewProject={() => {
-              if (isDemoMode) return;
               const newSpec = structuredClone(RETO11_ACT1_SPEC);
               newSpec.id = `actividad-nueva-${Date.now().toString().slice(-6)}`;
               newSpec.activityNumber = projects.length + 1;
@@ -545,13 +535,13 @@ export default function StudioApp() {
               setWorkingSpec(newSpec);
               navigateToRoute({ view: "wizard", step: 1 });
             }}
-            onPreviewProject={(id) => handleOpenPreviewModal(id, "player", isDemoMode)}
-            onViewPh5p={(p) => handleOpenPreviewModal(p.id, "python", isDemoMode)}
-            onViewMoodle={(p) => handleOpenPreviewModal(p.id, "moodle", isDemoMode)}
+            onPreviewProject={(id) => handleOpenPreviewModal(id, "player", false)}
+            onViewPh5p={(p) => handleOpenPreviewModal(p.id, "python", false)}
+            onViewMoodle={(p) => handleOpenPreviewModal(p.id, "moodle", false)}
           />
         )}
 
-        {activeView === "wizard" && isAuthenticated && (
+        {activeView === "wizard" && hasStudioAccess && (
           <WizardSteps
             spec={workingSpec}
             setSpec={setWorkingSpec}
@@ -628,7 +618,7 @@ export default function StudioApp() {
         project={previewProject}
         initialTab={previewTab}
         isPublicDemo={previewIsPublicDemo}
-        isReadOnly={isDemoMode}
+        isReadOnly={false}
       />
     </div>
   );

@@ -11,10 +11,11 @@ import {
   AlertCircle,
   Loader2,
   GraduationCap,
+  ArrowRight,
 } from "lucide-react";
 import { supabasePublic, HasProfile } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api-client";
-import { DEMO_PROFILE_NAMES, type DemoProfileName } from "@/lib/demo-mode";
+import { DEMO_PROFILE_NAMES, DEMO_CREDENTIALS, type DemoProfileName } from "@/lib/demo-mode";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -52,6 +53,7 @@ export default function AuthModal({
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loggingInDemoName, setLoggingInDemoName] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -126,6 +128,32 @@ export default function AuthModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDemoQuickLogin = async (name: DemoProfileName) => {
+    setLoggingInDemoName(name);
+    setErrorMsg(null);
+    try {
+      const creds = DEMO_CREDENTIALS[name];
+      if (creds) {
+        const { data, error } = await supabasePublic.auth.signInWithPassword({
+          email: creds.email,
+          password: creds.password,
+        });
+        if (!error && data.session) {
+          const prof = await loadAuthenticatedProfile();
+          onAuthSuccess(prof);
+          onClose();
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Direct demo sign-in fallback:", err);
+    } finally {
+      setLoggingInDemoName(null);
+    }
+    onDemoAccess(name);
+    onClose();
   };
 
   return (
@@ -262,27 +290,35 @@ export default function AuthModal({
             <section className="pt-3 border-t border-slate-200 space-y-2.5" aria-labelledby="demo-profiles-title">
               <div>
                 <h3 id="demo-profiles-title" className="text-xs font-bold text-slate-800">
-                  Explorar sin cuenta
+                  Cuentas de prueba rápida
                 </h3>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  Elige un perfil ficticio para ver muestras públicas en modo de solo lectura.
+                  Ingresa de inmediato con acceso completo (crear, editar en wizard, compilar y descargar).
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {DEMO_PROFILE_NAMES.map((name) => (
                   <button
                     key={name}
                     type="button"
-                    onClick={() => onDemoAccess(name)}
-                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-xs font-semibold text-slate-700 hover:text-[#8A1428] transition"
+                    disabled={loading || Boolean(loggingInDemoName)}
+                    onClick={() => handleDemoQuickLogin(name)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-xs font-semibold text-slate-700 hover:text-[#8A1428] transition disabled:opacity-50 text-left"
                   >
-                    {name}
-                    <span className="block text-[9px] font-medium text-slate-400">Demo · solo lectura</span>
+                    <span className="flex items-center justify-between">
+                      <span>{name}</span>
+                      {loggingInDemoName === name ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-[#8A1428]" />
+                      ) : (
+                        <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-[#8A1428]" />
+                      )}
+                    </span>
+                    <span className="block text-[9px] font-medium text-emerald-600 mt-0.5">Acceso completo</span>
                   </button>
                 ))}
               </div>
               <p className="text-[10px] text-slate-400">
-                No crea una cuenta ni permite generar, editar o guardar recursos.
+                Clave estándar para ingreso manual: <span className="font-mono text-slate-600 font-semibold">HasPrueba2026!</span>
               </p>
             </section>
           )}
