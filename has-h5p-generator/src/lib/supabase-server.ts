@@ -195,6 +195,7 @@ export async function loadH5pTemplateBuffer(): Promise<Buffer> {
   const explicitPath = process.env.PH5P_TEMPLATE_PATH;
   const candidates = [
     explicitPath,
+    path.resolve(process.cwd(), 'public', 'templates', 'fiuao-6-215', 'plantilla.h5p'),
     path.resolve(process.cwd(), "..", "ph5p", "plantillas", "fiuao-6-215", "plantilla.h5p"),
   ].filter((value): value is string => Boolean(value));
   for (const candidate of candidates) {
@@ -263,3 +264,4 @@ export async function downloadH5pPackageFromSupabase(
   }
   return buffer;
 }
+

@@ -6,8 +6,9 @@ node_modules/
 # Next.js build
 .next/
 out/
-build/
+/build/
 dist/
+!has-h5p-generator/src/app/api/h5p/build/**
 
 # Environment files
 .env*.local

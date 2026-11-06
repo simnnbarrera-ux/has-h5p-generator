@@ -2506,11 +2506,16 @@ export async function buildH5pPackageFromSpec(
     "fiuao-6-215",
     "plantilla.h5p"
   );
+  const bundledZipPath = path.resolve(process.cwd(), "public", "templates", "fiuao-6-215", "plantilla.h5p");
   const tmpZipPath = path.join(os.tmpdir(), "fiuao-6-215-plantilla.h5p");
 
   let baseZipBuf: Buffer;
   if (suppliedTemplateBuffer?.length) {
     baseZipBuf = Buffer.from(suppliedTemplateBuffer);
+  } else if (process.env.PH5P_TEMPLATE_PATH && fs.existsSync(process.env.PH5P_TEMPLATE_PATH)) {
+    baseZipBuf = fs.readFileSync(process.env.PH5P_TEMPLATE_PATH);
+  } else if (fs.existsSync(bundledZipPath)) {
+    baseZipBuf = fs.readFileSync(bundledZipPath);
   } else if (fs.existsSync(localZipPath)) {
     baseZipBuf = fs.readFileSync(localZipPath);
   } else if (fs.existsSync(tmpZipPath)) {
