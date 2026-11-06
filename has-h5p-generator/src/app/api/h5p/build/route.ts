@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import sharp from "sharp";
 import { getRequestUser, getTrustedClientIp } from "@/lib/api-auth";
 import {
   buildH5pPackageFromSpec,
@@ -97,7 +98,11 @@ export async function POST(req: NextRequest) {
     const buildResult = await buildH5pPackageFromSpec(
       workingSpec,
       audioAssets,
-      templateBuffer
+      templateBuffer,
+      (svgContent) =>
+        sharp(Buffer.from(svgContent, "utf-8"))
+          .png({ quality: 95 })
+          .toBuffer()
     );
 
     // 4. Subir paquete privado a Supabase Cloud Storage si está disponible

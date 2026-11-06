@@ -2495,7 +2495,8 @@ export function generateMoodleBookJson(spec: HasProjectSpec): any {
 export async function buildH5pPackageFromSpec(
   spec: HasProjectSpec,
   audioAssets: Map<string, Buffer> = new Map(),
-  suppliedTemplateBuffer?: Buffer
+  suppliedTemplateBuffer?: Buffer,
+  rasterizeSvgToPng?: (svgContent: string) => Promise<Buffer>
 ): Promise<{
   h5pBuffer: Buffer;
   previewPath: string;
@@ -2669,7 +2670,12 @@ export async function buildH5pPackageFromSpec(
   zip.file("h5p.json", JSON.stringify(finalH5pJson, null, 2));
   zip.file("content/content.json", JSON.stringify(finalContent));
 
-  const sharp = eval("require")("sharp");
+  const rasterize = rasterizeSvgToPng ?? (async (svgContent: string) => {
+    const sharp = eval("require")("sharp");
+    return sharp(Buffer.from(svgContent, "utf-8"))
+      .png({ quality: 95 })
+      .toBuffer() as Promise<Buffer>;
+  });
 
 
   // Inyectar imágenes rasterizadas PNG de alta resolución, audios MP3 y archivos nativos de la plantilla
@@ -2682,9 +2688,7 @@ export async function buildH5pPackageFromSpec(
       generatedSvgs.get(`${baseName}.svg`);
 
     if (matchingSvgAsset) {
-      const pngBuffer = await sharp(Buffer.from(matchingSvgAsset.svgContent, "utf-8"))
-        .png({ quality: 95 })
-        .toBuffer();
+      const pngBuffer = await rasterize(matchingSvgAsset.svgContent);
       // Garantizar que la ruta dentro del zip use extensión .png
       const targetRelPath = relPath.replace(/\.svg$/i, ".png");
       zip.file(`content/${targetRelPath}`, pngBuffer);

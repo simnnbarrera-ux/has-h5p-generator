@@ -87,3 +87,35 @@ test("reserveVisualSpace leaves a blank column on image layouts and releases wid
     assert.ok(expanded.bodyWidth > reserved.bodyWidth, `El layout ${templateSlide} debe ampliar el texto al apagar la reserva.`);
   }
 });
+
+test("buildH5pPackageFromSpec uses the injected SVG rasterizer", async () => {
+  let rasterizedSvg = "";
+  const result = await buildH5pPackageFromSpec({
+    id: "rasterizer-injection-test",
+    title: "Prueba de rasterizador",
+    courseName: "Curso de prueba",
+    moduleName: "Unidad 1",
+    activityNumber: 1,
+    templateId: "plantilla-1",
+    defaultVoice: "es-CO-SalomeNeural",
+    includeNavigationGuide: false,
+    auditReport: [],
+    textChanges: [],
+    slides: [{
+      id: "slide-1",
+      key: "concepto",
+      templateSlide: 9,
+      menuTitle: "Conjuntos numéricos",
+      titleBlack: "Conjuntos",
+      titleAccent: "numéricos",
+      paragraphs: ["Representación de conjuntos."],
+      svgDiagramId: "conjuntos_numericos",
+    }],
+  }, new Map(), undefined, async (svgContent) => {
+    rasterizedSvg = svgContent;
+    return Buffer.from("test-png");
+  });
+
+  assert.match(rasterizedSvg, /<svg/i);
+  assert.ok(result.h5pBuffer.length > 0);
+});
