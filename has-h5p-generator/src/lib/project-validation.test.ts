@@ -31,6 +31,20 @@ test("validateProjectSpec keeps a valid spec and applies bounded defaults", () =
   assert.equal(spec.slides[0].menuTitle, "Portada");
 });
 
+test("validateProjectSpec preserves the per-slide visual-space toggle", () => {
+  const withReservedSpace = structuredClone(minimalSpec);
+  withReservedSpace.slides[0].reserveVisualSpace = true;
+  assert.equal(validateProjectSpec(withReservedSpace).slides[0].reserveVisualSpace, true);
+
+  const withoutReservedSpace = structuredClone(minimalSpec);
+  withoutReservedSpace.slides[0].reserveVisualSpace = false;
+  assert.equal(validateProjectSpec(withoutReservedSpace).slides[0].reserveVisualSpace, false);
+
+  const invalid = structuredClone(minimalSpec);
+  invalid.slides[0].reserveVisualSpace = "yes";
+  assert.throws(() => validateProjectSpec(invalid), /reserveVisualSpace no es válido/);
+});
+
 test("validateProjectSpec rejects active or credential-bearing links", () => {
   const unsafe = structuredClone(minimalSpec);
   unsafe.slides[0] = {

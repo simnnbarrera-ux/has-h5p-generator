@@ -23,6 +23,7 @@ import {
   validateProjectSpec,
 } from "@/lib/project-validation";
 import { toClientProjectRecord } from "@/lib/project-serializers";
+import { removeStoredH5pPackage } from "@/lib/package-storage-cleanup";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
     );
 
     // 4. Subir paquete privado a Supabase Cloud Storage si está disponible
-    let storagePath: string | null = null;
+    let storagePath: string;
     try {
       storagePath = await uploadH5pPackageToSupabase(
         user.id,
@@ -108,9 +109,13 @@ export async function POST(req: NextRequest) {
         buildResult.h5pBuffer
       );
     } catch (storageErr) {
-      console.warn(
-        "[H5P Build] Almacenamiento privado no disponible temporalmente:",
-        storageErr instanceof Error ? storageErr.message : String(storageErr)
+      console.error(
+        "[H5P Build] Private package upload failed:",
+        storageErr instanceof Error ? storageErr.name : "UnknownError"
+      );
+      return NextResponse.json(
+        { error: "El paquete se generó, pero no pudo guardarse en el almacenamiento privado. No se guardaron los cambios; inténtalo de nuevo más tarde." },
+        { status: 503, headers: { "Cache-Control": "private, no-store" } }
       );
     }
 
@@ -137,7 +142,20 @@ export async function POST(req: NextRequest) {
       created_at: now,
       updated_at: now,
     };
-    const saved = await saveProjectToDb(record, user.id);
+    let saved: HasProjectRecord;
+    try {
+      saved = await saveProjectToDb(record, user.id);
+    } catch (saveErr) {
+      try {
+        await removeStoredH5pPackage(user.id, workingSpec.id, storagePath);
+      } catch (cleanupErr) {
+        console.warn(
+          "[H5P Build] Could not remove the unreferenced package after a failed project save:",
+          cleanupErr instanceof Error ? cleanupErr.name : "UnknownError"
+        );
+      }
+      throw saveErr;
+    }
 
     // 6. Generar cookie de autorización para previsualización segura
     const previewToken = createPreviewToken(user.id, workingSpec.id);

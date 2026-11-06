@@ -255,6 +255,12 @@ function validateSlide(value: unknown, index: number): HasSlideSpec {
     });
   }
   if (slide.svgDiagramId !== undefined) output.svgDiagramId = safeKey(slide.svgDiagramId, `slides[${index}].svgDiagramId`);
+  if (slide.reserveVisualSpace !== undefined) {
+    if (typeof slide.reserveVisualSpace !== "boolean") {
+      throw new ProjectValidationError(`reserveVisualSpace no es válido en la diapositiva ${index + 1}.`);
+    }
+    output.reserveVisualSpace = slide.reserveVisualSpace;
+  }
   if (slide.customSvg !== undefined) {
     const svg = slide.customSvg;
     if (!svg || typeof svg !== "object") throw new ProjectValidationError(`customSvg de la diapositiva ${index + 1} no es válido.`);

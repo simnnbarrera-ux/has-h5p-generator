@@ -39,6 +39,7 @@ import {
 } from "@/lib/h5p-engine";
 import TiltCard from "./TiltCard";
 import { apiFetch } from "@/lib/api-client";
+import { supportsVisualSpace } from "@/lib/visual-space";
 
 interface WizardStepsProps {
   spec: HasProjectSpec;
@@ -47,6 +48,8 @@ interface WizardStepsProps {
   compiling: boolean;
   compilationResult: any;
 }
+
+const MAX_REFORMULATION_SLIDES = 24;
 
 export default function WizardSteps({
   spec,
@@ -66,6 +69,17 @@ export default function WizardSteps({
 
   // Preview key for iframe dynamic reloads
   const [previewKey, setPreviewKey] = useState<number>(0);
+  const [reformulationSlideCount, setReformulationSlideCount] = useState(
+    Math.min(spec.slides.length, MAX_REFORMULATION_SLIDES)
+  );
+  const [reformulationDifficulty, setReformulationDifficulty] = useState("intermedio");
+  const [reformulationFocus, setReformulationFocus] = useState("mixto");
+  const [reformulationDensity, setReformulationDensity] = useState("equilibrada");
+  const [reformulationInstruction, setReformulationInstruction] = useState("");
+  const [reformulatingPresentation, setReformulatingPresentation] = useState(false);
+  const [hasReformulatedPresentation, setHasReformulatedPresentation] = useState(false);
+  const [hasStep4DefaultSpec, setHasStep4DefaultSpec] = useState(false);
+  const step4DefaultSpecRef = useRef<{ projectId: string; spec: HasProjectSpec } | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -203,6 +217,12 @@ export default function WizardSteps({
 
   // Step change handler
   const handleStepChange = async (targetStep: 1 | 2 | 3 | 4 | 5) => {
+    if (targetStep === 4 && step4DefaultSpecRef.current?.projectId !== spec.id) {
+      step4DefaultSpecRef.current = { projectId: spec.id, spec: structuredClone(spec) };
+      setReformulationSlideCount(Math.min(spec.slides.length, MAX_REFORMULATION_SLIDES));
+      setHasReformulatedPresentation(false);
+      setHasStep4DefaultSpec(true);
+    }
     if (targetStep === 5 && currentStep !== 5) {
       setCurrentStep(5);
       const res = await onCompile(spec);
@@ -401,16 +421,17 @@ export default function WizardSteps({
         throw new Error(data.error || "Error generando SVG.");
       }
       if (data.customSvg) {
-        const slide = spec.slides[selectedSlideIndex];
-        if (slide) {
-          const updated = [...spec.slides];
-          updated[selectedSlideIndex] = {
-            ...slide,
-            customSvg: data.customSvg,
-            imagePendingDescription: data.altText || slide.imagePendingDescription,
-          };
-          setSpec({ ...spec, slides: updated });
-        }
+        setSpec((previous) => ({
+          ...previous,
+          slides: previous.slides.map((slide, index) => index === selectedSlideIndex
+            ? {
+                ...slide,
+                customSvg: data.customSvg,
+                imagePendingDescription: data.altText || slide.imagePendingDescription,
+                reserveVisualSpace: true,
+              }
+            : slide),
+        }));
         setSvgPrompt("");
       }
     } catch (error: unknown) {
@@ -419,6 +440,70 @@ export default function WizardSteps({
     } finally {
       setSvgGenerating(false);
     }
+  };
+
+  const handleReformulatePresentation = async () => {
+    if (reformulatingPresentation) return;
+    if (
+      !step4DefaultSpecRef.current ||
+      step4DefaultSpecRef.current.projectId !== spec.id
+    ) {
+      step4DefaultSpecRef.current = { projectId: spec.id, spec: structuredClone(spec) };
+      setHasStep4DefaultSpec(true);
+    }
+
+    setReformulatingPresentation(true);
+    try {
+      const res = await apiFetch("/api/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "reformulate",
+          spec,
+          slideCount: reformulationSlideCount,
+          difficulty: reformulationDifficulty,
+          focus: reformulationFocus,
+          density: reformulationDensity,
+          prompt: reformulationInstruction.trim(),
+        }),
+      });
+      const data: { spec?: HasProjectSpec; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "No fue posible reformular la presentación.");
+      }
+      if (!data.spec || data.spec.slides.length !== reformulationSlideCount) {
+        throw new Error("La IA no devolvió la cantidad de diapositivas solicitada.");
+      }
+
+      setSpec(data.spec);
+      setSelectedSlideIndex(0);
+      setHasReformulatedPresentation(true);
+      showToast(`Presentación reformulada: ${data.spec.slides.length} diapositivas. Revísala antes de compilar.`);
+    } catch (error: unknown) {
+      console.error("Error reformulando la presentación:", error);
+      showToast(error instanceof Error ? error.message : "No fue posible reformular la presentación.");
+    } finally {
+      setReformulatingPresentation(false);
+    }
+  };
+
+  const handleRestoreDefaultFormulation = () => {
+    const snapshot = step4DefaultSpecRef.current;
+    if (!snapshot || snapshot.projectId !== spec.id) {
+      showToast("No se encontró la formulación inicial de este proyecto.");
+      return;
+    }
+    setSpec(structuredClone(snapshot.spec));
+    setReformulationSlideCount(Math.min(snapshot.spec.slides.length, MAX_REFORMULATION_SLIDES));
+    setReformulationDifficulty("intermedio");
+    setReformulationFocus("mixto");
+    setReformulationDensity("equilibrada");
+    setReformulationInstruction("");
+    setSelectedSlideIndex(0);
+    setHasReformulatedPresentation(false);
+    showToast("Se restauró la formulación con la que entraste al Paso 4.");
   };
 
   const stepsList = [
@@ -1364,7 +1449,120 @@ export default function WizardSteps({
       {/* PASO 4: EDITOR VISUAL DE DIAPOSITIVAS Y AJUSTE DE CAJAS       */}
       {/* ------------------------------------------------------------- */}
       {currentStep === 4 && (
-        <div className="space-y-6">
+        <div
+          className={`space-y-6 ${reformulatingPresentation ? "pointer-events-none opacity-70" : ""}`}
+          aria-busy={reformulatingPresentation}
+        >
+          <section className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-rose-50 p-5 shadow-sm space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-800">
+                  {reformulatingPresentation ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900">Reformulación de presentación</h3>
+                  <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-600">
+                    Ajusta la estructura pedagógica y la cantidad de diapositivas. La guía de navegación, si está activa, se agrega aparte. La versión por defecto es la presentación con la que entraste a este paso.
+                  </p>
+                  {hasReformulatedPresentation && (
+                    <p className="mt-1 text-[11px] font-semibold text-violet-800" role="status">
+                      La IA aplicó cambios; revisa el contenido y las interacciones antes de compilar.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRestoreDefaultFormulation}
+                disabled={!hasStep4DefaultSpec || reformulatingPresentation}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Volver a formulación por defecto
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <label className="space-y-1 text-xs font-semibold text-slate-700">
+                <span>Número de diapositivas</span>
+                <select
+                  value={reformulationSlideCount}
+                  onChange={(event) => setReformulationSlideCount(Number(event.target.value))}
+                  disabled={reformulatingPresentation}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60"
+                >
+                  {Array.from({ length: MAX_REFORMULATION_SLIDES }, (_, index) => index + 1).map((count) => (
+                    <option key={count} value={count}>{count} {count === 1 ? "diapositiva" : "diapositivas"}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1 text-xs font-semibold text-slate-700">
+                <span>Nivel de dificultad</span>
+                <select
+                  value={reformulationDifficulty}
+                  onChange={(event) => setReformulationDifficulty(event.target.value)}
+                  disabled={reformulatingPresentation}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60"
+                >
+                  <option value="introductorio">Inicial</option>
+                  <option value="intermedio">Intermedio</option>
+                  <option value="avanzado">Avanzado</option>
+                </select>
+              </label>
+              <label className="space-y-1 text-xs font-semibold text-slate-700">
+                <span>Enfoque pedagógico</span>
+                <select
+                  value={reformulationFocus}
+                  onChange={(event) => setReformulationFocus(event.target.value)}
+                  disabled={reformulatingPresentation}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60"
+                >
+                  <option value="conceptual">Conceptual</option>
+                  <option value="aplicado">Aplicado</option>
+                  <option value="evaluativo">Evaluativo</option>
+                  <option value="mixto">Mixto</option>
+                </select>
+              </label>
+              <label className="space-y-1 text-xs font-semibold text-slate-700">
+                <span>Densidad del contenido</span>
+                <select
+                  value={reformulationDensity}
+                  onChange={(event) => setReformulationDensity(event.target.value)}
+                  disabled={reformulatingPresentation}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60"
+                >
+                  <option value="sintetica">Sintética</option>
+                  <option value="equilibrada">Equilibrada</option>
+                  <option value="detallada">Detallada</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto] md:items-end">
+              <label className="space-y-1 text-xs font-semibold text-slate-700">
+                <span>Indicaciones adicionales (opcional)</span>
+                <textarea
+                  value={reformulationInstruction}
+                  onChange={(event) => setReformulationInstruction(event.target.value.slice(0, 1_000))}
+                  maxLength={1_000}
+                  rows={2}
+                  placeholder="Ej. Incluye un caso colombiano y cierra con una pregunta de reflexión."
+                  disabled={reformulatingPresentation}
+                  className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-60"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleReformulatePresentation}
+                disabled={reformulatingPresentation || reformulationSlideCount < 1 || reformulationSlideCount > MAX_REFORMULATION_SLIDES}
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {reformulatingPresentation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {reformulatingPresentation ? "Reformulando…" : "Reformular con IA"}
+              </button>
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Slides Navigation Strip */}
             <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-4 shadow-sm space-y-3">
@@ -1383,8 +1581,10 @@ export default function WizardSteps({
                       titleAccent: "Clave",
                       subtitle: "Subtítulo descriptivo",
                       paragraphs: ["Escribe el contenido aquí."],
+                      reserveVisualSpace: false,
                     };
                     setSpec({ ...spec, slides: [...spec.slides, newSlide] });
+                    setReformulationSlideCount(Math.min(spec.slides.length + 1, MAX_REFORMULATION_SLIDES));
                     setSelectedSlideIndex(spec.slides.length);
                   }}
                   className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#8A1428] text-xs font-semibold flex items-center gap-1 cursor-pointer"
@@ -1445,7 +1645,13 @@ export default function WizardSteps({
                           const newSlideNum = parseInt(e.target.value, 10);
                           const updated = spec.slides.map((s, idx) =>
                             idx === selectedSlideIndex
-                              ? { ...s, templateSlide: newSlideNum }
+                              ? {
+                                  ...s,
+                                  templateSlide: newSlideNum,
+                                  reserveVisualSpace: supportsVisualSpace(newSlideNum)
+                                    ? s.reserveVisualSpace ?? Boolean(s.svgDiagramId || s.customSvg || s.imagePendingDescription)
+                                    : false,
+                                }
                               : s
                           );
                           setSpec({ ...spec, slides: updated });
@@ -1467,6 +1673,7 @@ export default function WizardSteps({
                             (_, i) => i !== selectedSlideIndex
                           );
                           setSpec({ ...spec, slides: filtered });
+                          setReformulationSlideCount(Math.min(filtered.length, MAX_REFORMULATION_SLIDES));
                           setSelectedSlideIndex(Math.max(0, selectedSlideIndex - 1));
                         }}
                         className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
@@ -1550,6 +1757,58 @@ export default function WizardSteps({
                           </div>
                         </div>
                       </div>
+                    );
+                  })()}
+
+                  {/* Per-slide image-space reservation */}
+                  {(() => {
+                    const currentSlide = spec.slides[selectedSlideIndex];
+                    const supportsVisualSlot = supportsVisualSpace(currentSlide.templateSlide);
+                    const hasVisualAsset = Boolean(
+                      currentSlide.svgDiagramId ||
+                      currentSlide.customSvg ||
+                      currentSlide.imagePendingDescription
+                    );
+                    const reserveVisualSpace = currentSlide.reserveVisualSpace ?? hasVisualAsset;
+                    return (
+                      <section className="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="max-w-2xl">
+                            <h4 className="text-xs font-bold text-slate-900">Espacio para imagen en esta diapositiva</h4>
+                            <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+                              Actívalo para mantener una columna visual; si aún no hay imagen, quedará en blanco. Desactívalo para ocultar la imagen y ampliar el espacio del texto.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={reserveVisualSpace}
+                            aria-label="Reservar espacio para imagen en esta diapositiva"
+                            disabled={!supportsVisualSlot}
+                            onClick={() => setSpec((previous) => ({
+                              ...previous,
+                              slides: previous.slides.map((slide, index) => index === selectedSlideIndex
+                                ? { ...slide, reserveVisualSpace: !reserveVisualSpace }
+                                : slide),
+                            }))}
+                            className={`inline-flex shrink-0 items-center gap-3 rounded-xl border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                              reserveVisualSpace
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                : "border-slate-200 bg-slate-50 text-slate-700"
+                            }`}
+                          >
+                            <span className={`relative h-6 w-11 rounded-full transition ${reserveVisualSpace ? "bg-emerald-600" : "bg-slate-300"}`} aria-hidden="true">
+                              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${reserveVisualSpace ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+                            </span>
+                            <span>{reserveVisualSpace ? "Sí, reservar" : "No, usar ancho completo"}</span>
+                          </button>
+                        </div>
+                        {!supportsVisualSlot && (
+                          <p className="mt-2 text-[11px] text-amber-800" role="note">
+                            Esta composición no tiene una zona visual configurable. Para activar la reserva, elige la plantilla 4 (Estación con esquema) o la plantilla 6 (Debate).
+                          </p>
+                        )}
+                      </section>
                     );
                   })()}
 

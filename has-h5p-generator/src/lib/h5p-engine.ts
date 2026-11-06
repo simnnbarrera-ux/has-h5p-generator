@@ -17,6 +17,7 @@ import {
   generateCustomConceptSvg,
   GeneratedSvgAsset,
 } from "./svg-diagrams";
+import { supportsVisualSpace } from "./visual-space";
 
 export interface SlideInteractionSpec {
   type:
@@ -116,6 +117,7 @@ export interface HasSlideSpec {
     formula?: string;
     highlights: string[];
   };
+  reserveVisualSpace?: boolean;
   imagePendingDescription?: string;
   apaReferences?: string[];
   audioNarration?: {
@@ -1301,6 +1303,9 @@ function compileSlideFromSpec(
     generatedSvgs.set(svgAsset.filename, svgAsset);
     generatedSvgs.set(pngName, svgAsset);
   }
+  const hasVisualAsset = Boolean(svgAsset || slideSpec.imagePendingDescription);
+  const reserveVisualSpace = supportsVisualSpace(slideNum) &&
+    (slideSpec.reserveVisualSpace ?? hasVisualAsset);
 
   const els: any[] = raw.elements;
   const toRemove = new Set<number>();
@@ -1315,7 +1320,13 @@ function compileSlideFromSpec(
       width: els[imgIdx].width,
       height: els[imgIdx].height,
     };
-    if (slideSpec.imagePendingDescription && !svgAsset) {
+    if (!reserveVisualSpace) {
+      toRemove.add(imgIdx);
+    } else if (
+      slideSpec.reserveVisualSpace !== true &&
+      slideSpec.imagePendingDescription &&
+      !svgAsset
+    ) {
       replacements.set(
         imgIdx,
         makePendingImageElements(baseCoords, slideSpec.imagePendingDescription)
@@ -1323,6 +1334,7 @@ function compileSlideFromSpec(
     } else if (svgAsset) {
       replacements.set(imgIdx, [makeImageElement(baseCoords, svgAsset)]);
     } else {
+      // Mantener libre la columna visual sin mostrar un marcador falso.
       toRemove.add(imgIdx);
     }
   };
@@ -1434,7 +1446,7 @@ function compileSlideFromSpec(
         colorAccent
       );
 
-      const hasVisual = Boolean(svgAsset || slideSpec.imagePendingDescription);
+      const hasVisual = reserveVisualSpace;
       const hasBottomBox = Boolean(slideSpec.highlightBox || slideSpec.pendingNote);
 
       if (hasVisual) {
@@ -1819,9 +1831,12 @@ function compileSlideFromSpec(
       break;
     }
     case 7: {
-      els[3].x = 49.5;
+      const hasVisual = reserveVisualSpace;
+      const textX = hasVisual ? 49.5 : 6.9;
+      const textWidth = hasVisual ? 46 : 86.2;
+      els[3].x = textX;
       els[3].y = 14;
-      els[3].width = 46;
+      els[3].width = textWidth;
       els[3].height = 16;
       els[3].action.params.text = htmlTitulo(
         slideSpec.titleBlack,
@@ -1832,9 +1847,9 @@ function compileSlideFromSpec(
         colorTextPrimary,
         colorAccent
       );
-      els[2].x = 49.5;
+      els[2].x = textX;
       els[2].y = 31;
-      els[2].width = 46;
+      els[2].width = textWidth;
       els[2].height = 56;
       els[2].action.params.text =
         htmlParrafos(slideSpec.paragraphs, sz("0.84em"), colorTextPrimary, fontStack) +
@@ -1846,6 +1861,8 @@ function compileSlideFromSpec(
       break;
     }
     case 9: {
+      const hasVisual = reserveVisualSpace;
+      const contentWidth = hasVisual ? 34 : 86.2;
       if (els[0]?.action?.params?.shape) {
         els[0].action.params.shape.fillColor = colorHighlightBg;
       }
@@ -1853,7 +1870,7 @@ function compileSlideFromSpec(
         els[9].action.params.shape.fillColor = colorPrimary;
       }
       els[1].width = 16;
-      els[2].width = 16;
+      els[2].width = hasVisual ? 16 : 86.2;
       els[2].height = 9;
       els[2].action.params.text = `<p style="margin:0;line-height:1.2;font-family:${fontStack};"><span style="font-size:${sz(
         "0.95em"
@@ -1862,7 +1879,7 @@ function compileSlideFromSpec(
       )}</strong></span></p>`;
       els[5].x = 6.5;
       els[5].y = 25;
-      els[5].width = 33;
+      els[5].width = contentWidth;
       els[5].height = 13;
       els[5].action.params.text = `<p style="margin:0;line-height:1.2;font-family:${fontStack};"><span style="font-size:${sz(
         "1.02em"
@@ -1885,7 +1902,7 @@ function compileSlideFromSpec(
       }
       els[3].x = 6.5;
       els[3].y = 38;
-      els[3].width = 34;
+      els[3].width = contentWidth;
       els[3].height = 54;
       els[3].action.params.text = bodyHtml;
 
@@ -2029,7 +2046,7 @@ function compileSlideFromSpec(
       }
 
       const hasBox = Boolean(slideSpec.highlightBox || slideSpec.pendingNote);
-      const hasVisual = Boolean(svgAsset || slideSpec.imagePendingDescription);
+      const hasVisual = reserveVisualSpace;
       const contentWidth = hasVisual ? 62 : 86.2;
 
       els[2].x = 6.8;
