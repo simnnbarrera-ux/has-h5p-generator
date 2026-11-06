@@ -356,8 +356,44 @@
       font-weight: 500 !important;
     }
 
+    
+    /* Institutional Popup Close Button with Visible ✕ Glyph */
+    .h5p-course-presentation .h5p-close-popup {
+      position: absolute !important;
+      top: 12px !important;
+      right: 12px !important;
+      width: 28px !important;
+      height: 28px !important;
+      background: #f1f5f9 !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      z-index: 300 !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12) !important;
+    }
+    .h5p-course-presentation .h5p-close-popup::before {
+      content: "✕" !important;
+      font-family: Arial, sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      color: #334155 !important;
+      line-height: 1 !important;
+    }
+    .h5p-course-presentation .h5p-close-popup:hover {
+      background: #8A1428 !important;
+      border-color: #8A1428 !important;
+    }
+    .h5p-course-presentation .h5p-close-popup:hover::before {
+      color: #ffffff !important;
+    }
+
     /* DragText Drop Zone & Baseline Alignment */
+    .h5p-drag-text { padding-bottom: 56px !important; }
     .h5p-drag-text .h5p-drag-droppable-words {
+      padding-bottom: 40px !important;
       line-height: 2.2 !important;
       color: #0f172a !important;
       font-size: 0.95em !important;

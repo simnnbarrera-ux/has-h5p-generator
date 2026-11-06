@@ -105,13 +105,13 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <rect width="860" height="580" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="72" rx="14" fill="#8A1428"/>
   <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">ESTÁNDAR IEEE-754: ARITMÉTICA DE PUNTO FLOTANTE EN MÁQUINA</text>
-  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Del conjunto infinito de los números reales (ℝ) a una representación finita y discreta de 32 y 64 bits</text>
+  <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Del conjunto infinito de los números reales (R) a una representación finita y discreta de 32 y 64 bits</text>
 
   <!-- Fórmula Matemática Renderizada en Vector (Reemplaza MathDisplay) -->
   <rect x="24" y="108" width="812" height="86" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="430" y="136" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#8A1428">MODELO MATEMÁTICO DE NORMALIZACIÓN EN BASE 2</text>
-  <text x="430" y="172" text-anchor="middle" font-family="Georgia, serif" font-size="25" font-weight="bold" fill="#0B0F19">
-    x = (−1)ˢ × (1 . b₁b₂b₃…bₘ)₂ × 2^(E − Bias)
+  <text x="430" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#0B0F19">
+    x = (-1)ˢ × (1 . b₁b(bin)b₃...bₘ)(bin) × 2^(E - Bias)
   </text>
 
   <!-- Precisión Simple 32 Bits -->
@@ -127,14 +127,14 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <!-- Exponente -->
     <rect x="144" y="48" width="230" height="64" rx="8" fill="#0099E6"/>
     <text x="259" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Exponente (E = e + 127)</text>
-    <text x="259" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">8 bits [b₃₀ … b₂₃]</text>
+    <text x="259" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">8 bits [b₃₀ ... b(bin)₃]</text>
 
     <!-- Mantisa -->
     <rect x="384" y="48" width="404" height="64" rx="8" fill="#1D5CFF"/>
     <text x="586" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa / Fracción Normalizada (M)</text>
-    <text x="586" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">23 bits [b₂₂ … b₀] (bit implícito 1.)</text>
+    <text x="586" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">23 bits [b(bin)(bin) ... b₀] (bit implícito 1.)</text>
 
-    <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (−12.5)₁₀ = −1100.1₂ = −1.1001₂ × 2³  →  S = 1 | E = 3+127 = 130 (10000010₂) | M = 10010000000000000000000₂</text>
+    <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (-12.5)(dec) = -1100.1(bin) = -1.1001(bin) × 2³  →  S = 1 | E = 3+127 = 130 (10000010(bin)) | M = 10010000000000000000000(bin)</text>
   </g>
 
   <!-- Precisión Doble 64 Bits -->
@@ -148,11 +148,11 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
     <rect x="144" y="48" width="250" height="64" rx="8" fill="#0099E6"/>
     <text x="269" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Exponente (E = e + 1023)</text>
-    <text x="269" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">11 bits [b₆₂ … b₅₂]</text>
+    <text x="269" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#FFFFFF">11 bits [b₆(bin) ... b₅(bin)]</text>
 
     <rect x="404" y="48" width="384" height="64" rx="8" fill="#0B0F19"/>
     <text x="596" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa de Alta Precisión (M)</text>
-    <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b₅₁ … b₀] (~15-17 dígitos dec.)</text>
+    <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b₅₁ ... b₀] (~15-17 dígitos dec.)</text>
 
     <text x="24" y="140" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">Nota clave:</text>
     <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de números racionales diádicos (k / 2ⁿ) tiene representación exacta en punto flotante.</text>
@@ -176,7 +176,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
   <!-- Definición formal 7-tupla -->
   <rect x="24" y="110" width="812" height="70" rx="12" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
-  <text x="430" y="138" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#0B0F19">
+  <text x="430" y="138" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#0B0F19">
     M = ( Q, Σ, Γ, δ, q₀, B, F )     donde     δ : Q × Γ → Q × Γ × { L, R }
   </text>
   <text x="430" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">
@@ -220,8 +220,8 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <polygon points="380,104 354,142 406,142" fill="#8A1428"/>
     <rect x="240" y="142" width="280" height="156" rx="16" fill="#0B0F19" stroke="#0099E6" stroke-width="3"/>
     <text x="380" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0099E6">CABEZAL LECTOR / ESCRITOR</text>
-    <text x="380" y="204" text-anchor="middle" font-family="monospace" font-size="16" fill="#FFFFFF">Estado Actual: q₂ (Normalizando)</text>
-    <text x="380" y="234" text-anchor="middle" font-family="monospace" font-size="15" fill="#E0F3FA">Regla: δ(q₂, '1') = (q₃, '0', R)</text>
+    <text x="380" y="204" text-anchor="middle" font-family="monospace" font-size="16" fill="#FFFFFF">Estado Actual: q(bin) (Normalizando)</text>
+    <text x="380" y="234" text-anchor="middle" font-family="monospace" font-size="15" fill="#E0F3FA">Regla: δ(q(bin), '1') = (q₃, '0', R)</text>
     <rect x="275" y="252" width="210" height="30" rx="8" fill="#8A1428"/>
     <text x="380" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">1. Lee → 2. Escribe → 3. Mueve</text>
   </g>
@@ -239,37 +239,37 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 540" width="840" height="540">
   <rect width="840" height="540" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="792" height="68" rx="14" fill="#8A1428"/>
-  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">ACTIVACIÓN DE SABERES: CONJUNTOS NUMÉRICOS (ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ)</text>
-  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">De contar elementos discretos (ℕ) a medir magnitudes continuas (ℝ) y discretizarlas en binario</text>
+  <text x="48" y="50" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">ACTIVACIÓN DE SABERES: CONJUNTOS NUMÉRICOS (N ⊂ Z ⊂ Q ⊂ R)</text>
+  <text x="48" y="73" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">De contar elementos discretos (N) a medir magnitudes continuas (R) y discretizarlas en binario</text>
 
   <!-- Conjunto R -->
   <rect x="24" y="106" width="792" height="408" rx="18" fill="#FFFFFF" stroke="#0B0F19" stroke-width="3"/>
-  <text x="48" y="138" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#0B0F19">ℝ · Números Reales ( ℝ = ℚ ∪ 𝕀 ) — Usados para medir (continuos)</text>
+  <text x="48" y="138" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#0B0F19">R · Números Reales ( R = Q  union  I ) — Usados para medir (continuos)</text>
 
   <!-- Racionales Q -->
   <rect x="46" y="156" width="490" height="334" rx="16" fill="#E0F3FA" stroke="#0099E6" stroke-width="3"/>
-  <text x="68" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0099E6">ℚ · Racionales = { a/b | a, b ∈ ℤ, b ≠ 0 }</text>
-  <text x="68" y="212" font-family="monospace" font-size="14" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333… (periódico)</text>
+  <text x="68" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0099E6">Q · Racionales = { a/b | a, b en Z, b != 0 }</text>
+  <text x="68" y="212" font-family="monospace" font-size="14" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333... (periódico)</text>
 
   <!-- Enteros Z -->
   <rect x="74" y="232" width="434" height="236" rx="14" fill="#FFFFFF" stroke="#1D5CFF" stroke-width="2.5"/>
-  <text x="96" y="264" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#1D5CFF">ℤ · Enteros = { …, −3, −2, −1, 0, 1, 2, 3, … }</text>
+  <text x="96" y="264" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#1D5CFF">Z · Enteros = { ..., -3, -2, -1, 0, 1, 2, 3, ... }</text>
   <text x="96" y="288" font-family="monospace" font-size="14" fill="#334155">Complemento a 2 / Signo-Magnitud en registros enteros</text>
 
   <!-- Naturales N -->
   <rect x="104" y="308" width="374" height="138" rx="12" fill="#8A1428"/>
-  <text x="291" y="348" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">ℕ · Naturales = { 1, 2, 3, 4, … }</text>
+  <text x="291" y="348" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">N · Naturales = { 1, 2, 3, 4, ... }</text>
   <text x="291" y="378" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Usados para contar unidades discretas</text>
-  <text x="291" y="408" text-anchor="middle" font-family="monospace" font-size="14" font-weight="bold" fill="#FFFFFF">Base 2 directa: 13₁₀ = 1101₂</text>
+  <text x="291" y="408" text-anchor="middle" font-family="monospace" font-size="14" font-weight="bold" fill="#FFFFFF">Base 2 directa: 13(dec) = 1101(bin)</text>
 
   <!-- Irracionales I -->
   <rect x="556" y="156" width="238" height="334" rx="16" fill="#FFF7ED" stroke="#FE9800" stroke-width="3"/>
-  <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">𝕀 · Irracionales</text>
+  <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">I · Irracionales</text>
   <text x="675" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">No pueden expresarse</text>
   <text x="675" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">como fracción a/b.</text>
-  <text x="675" y="276" text-anchor="middle" font-family="Georgia, serif" font-size="19" font-weight="bold" fill="#8A1428">π ≈ 3.14159265…</text>
-  <text x="675" y="308" text-anchor="middle" font-family="Georgia, serif" font-size="19" font-weight="bold" fill="#8A1428">√2 ≈ 1.41421356…</text>
-  <text x="675" y="340" text-anchor="middle" font-family="Georgia, serif" font-size="19" font-weight="bold" fill="#8A1428">e ≈ 2.71828182…</text>
+  <text x="675" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">pi ~ 3.14159265...</text>
+  <text x="675" y="308" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">sqrt(2) ~ 1.41421356...</text>
+  <text x="675" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">e ~ 2.71828182...</text>
   <rect x="574" y="374" width="202" height="92" rx="10" fill="#8A1428"/>
   <text x="675" y="402" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">EN PUNTO FLOTANTE:</text>
   <text x="675" y="424" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#E0F3FA">Siempre se truncan o</text>
@@ -303,32 +303,32 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <!-- Fila U -->
     <line x1="20" y1="112" x2="792" y2="112" stroke="#E2E8F0" stroke-width="1.5"/>
     <text x="90" y="90" text-anchor="middle" font-family="monospace" font-size="26" font-weight="bold" fill="#8A1428">'U'</text>
-    <text x="240" y="90" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">85₁₀</text>
+    <text x="240" y="90" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">85(dec)</text>
     <text x="410" y="90" text-anchor="middle" font-family="monospace" font-size="22" fill="#1D5CFF">0x55</text>
     <rect x="520" y="62" width="240" height="38" rx="8" fill="#E0F3FA"/>
-    <text x="640" y="88" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01010101₂</text>
+    <text x="640" y="88" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01010101(bin)</text>
 
     <!-- Fila A -->
     <line x1="20" y1="180" x2="792" y2="180" stroke="#E2E8F0" stroke-width="1.5"/>
     <text x="90" y="156" text-anchor="middle" font-family="monospace" font-size="26" font-weight="bold" fill="#8A1428">'A'</text>
-    <text x="240" y="156" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">65₁₀</text>
+    <text x="240" y="156" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">65(dec)</text>
     <text x="410" y="156" text-anchor="middle" font-family="monospace" font-size="22" fill="#1D5CFF">0x41</text>
     <rect x="520" y="128" width="240" height="38" rx="8" fill="#E0F3FA"/>
-    <text x="640" y="154" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01000001₂</text>
+    <text x="640" y="154" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01000001(bin)</text>
 
     <!-- Fila O -->
     <text x="90" y="224" text-anchor="middle" font-family="monospace" font-size="26" font-weight="bold" fill="#8A1428">'O'</text>
-    <text x="240" y="224" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">79₁₀</text>
+    <text x="240" y="224" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">79(dec)</text>
     <text x="410" y="224" text-anchor="middle" font-family="monospace" font-size="22" fill="#1D5CFF">0x4F</text>
     <rect x="520" y="196" width="240" height="38" rx="8" fill="#E0F3FA"/>
-    <text x="640" y="222" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01001111₂</text>
+    <text x="640" y="222" text-anchor="middle" font-family="monospace" font-size="22" font-weight="bold" fill="#0B0F19">01001111(bin)</text>
   </g>
 
   <!-- Pesos posicionales de 1 Byte -->
   <rect x="24" y="390" width="812" height="126" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
-  <text x="430" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#8A1428">PESOS POSICIONALES DE UN BYTE (8 BITS): b₇ b₆ b₅ b₄ b₃ b₂ b₁ b₀</text>
+  <text x="430" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#8A1428">PESOS POSICIONALES DE UN BYTE (8 BITS): b7 b6 b5 b4 b3 b2 b1 b0</text>
   <text x="430" y="454" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#0B0F19">
-    [ 2⁷=128 | 2⁶=64 | 2⁵=32 | 2⁴=16 | 2³=8 | 2²=4 | 2¹=2 | 2⁰=1 ]
+    [ 2^7=128 | 2^6=64 | 2^5=32 | 2^4=16 | 2^3=8 | 2^2=4 | 2^1=2 | 2^0=1 ]
   </text>
   <text x="430" y="488" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">
     Proceso inverso: agrupar la cadena binaria en bloques de 8 bits, sumar las potencias activas y mapear al carácter ASCII.
@@ -396,7 +396,7 @@ export function generateCustomConceptSvg(params: {
   <text x="48" y="80" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">${safeSub}</text>
   <rect x="24" y="114" width="792" height="82" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="420" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">ESQUEMA SINTÉTICO INSTITUCIONAL UAO</text>
-  <text x="420" y="174" text-anchor="middle" font-family="Georgia, serif" font-size="20" font-weight="bold" fill="#0B0F19">${safeFormula}</text>
+  <text x="420" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#0B0F19">${safeFormula}</text>
   ${cardsXml}
 </svg>`;
 

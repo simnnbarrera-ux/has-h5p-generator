@@ -1437,7 +1437,7 @@ function compileSlideFromSpec(
       els[3].height = 12;
       els[3].action.params.text = `<p style="margin:0;line-height:1.25;font-family:${fontStack};"><span style="font-size:${sz(
         "1.15em"
-      )};color:${colorAccentText};font-family:${fontStack};"><strong>${escHtml(
+      )};color:#FFFFFF;opacity:0.95;font-family:${fontStack};"><strong>${escHtml(
         slideSpec.subtitle || `Actividad ${slideSpec.id}`
       )}</strong></span></p>`;
       const titleFontSize =
