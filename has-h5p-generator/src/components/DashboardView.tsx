@@ -123,12 +123,12 @@ export default function DashboardView({
               <span>{profile.faculty || "Facultad de Ingeniería y Ciencias Básicas"}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
-              {profile.full_name || "Docente UAO"}
+              {profile.full_name || "Profesor UAO"}
             </h1>
             <p className="text-xs text-slate-500 font-medium">
               {readOnly ? "Perfil ficticio de demostración" : profile.email} · Rol:{" "}
               <span className="font-semibold text-slate-700 capitalize">
-                {readOnly ? "Solo lectura" : profile.role === "admin" ? "Equipo 36 / Administrador" : "Docente Autor"}
+                {readOnly ? "Solo lectura" : profile.role === "admin" ? "Equipo 35 / Administrador" : "Profesor autor"}
               </span>
             </p>
           </div>
@@ -177,7 +177,7 @@ export default function DashboardView({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100 text-xs">
           <div className="flex items-center gap-2 text-slate-500 font-semibold">
             <span className="w-2 h-2 rounded-full bg-[#8A1428]" />
-            <span>Equipo Desarrollador 36 (EQ-36):</span>
+            <span>Equipo de desarrollo 35 (EQ-35):</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-700 text-xs font-medium">

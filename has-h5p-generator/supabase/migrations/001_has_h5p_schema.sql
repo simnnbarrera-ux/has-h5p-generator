@@ -1,9 +1,9 @@
 -- =============================================================================
 -- HAS H5P Generator — Esquema Relacional Idempotente (DB-First Persistence)
--- Universidad Autónoma de Occidente (UAO) - Digitatón 2026 (Reto 11 - EQ-36)
+-- Universidad Autónoma de Occidente (UAO) - Digitatón 2026 (Reto 11 - EQ-35)
 -- =============================================================================
 
--- 1. Tabla de Perfiles Docentes y Cuotas Diarias
+-- 1. Tabla de Perfiles de profesores y Cuotas Diarias
 CREATE TABLE IF NOT EXISTS public.has_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
@@ -55,13 +55,13 @@ CREATE INDEX IF NOT EXISTS idx_has_projects_user_email ON public.has_projects (u
 CREATE INDEX IF NOT EXISTS idx_has_usage_logs_rate_limit ON public.has_usage_logs (user_email, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_has_usage_logs_ip ON public.has_usage_logs (ip_address, created_at DESC);
 
--- Semilla inicial: Profesor Diseñador del Reto 11 y Equipo 36
+-- Semilla inicial: Profesor Diseñador del Reto 11 y Equipo 35
 INSERT INTO public.has_profiles (email, full_name, faculty, program, role, daily_quota, preferred_voice)
 VALUES
     ('oswaldo.rodriguez@uao.edu.co', 'Prof. Oswaldo Rodríguez Díaz', 'Facultad de Ingeniería y Ciencias Básicas', 'Matemáticas Discretas', 'professor', 50, 'es-CO-GonzaloNeural'),
-    ('simnn.barrera@uao.edu.co', 'Simón Barrera Ruíz (EQ-36)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica', 'admin', 100, 'es-CO-SalomeNeural'),
-    ('hermaioni.delgado@uao.edu.co', 'Hermaioni Delgado Paz (EQ-36)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica', 'admin', 100, 'es-CO-SalomeNeural'),
-    ('alex.silva@uao.edu.co', 'Alex Yohan Silva Mina (EQ-36)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Informática', 'admin', 100, 'es-CO-GonzaloNeural')
+    ('simnn.barrera@uao.edu.co', 'Simón Barrera Ruíz (EQ-35)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica', 'admin', 100, 'es-CO-SalomeNeural'),
+    ('hermaioni.delgado@uao.edu.co', 'Hermaioni Delgado Paz (EQ-35)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica', 'admin', 100, 'es-CO-SalomeNeural'),
+    ('alex.silva@uao.edu.co', 'Alex Yohan Silva Mina (EQ-35)', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Informática', 'admin', 100, 'es-CO-GonzaloNeural')
 ON CONFLICT (email) DO UPDATE SET
     full_name = EXCLUDED.full_name,
     updated_at = now();

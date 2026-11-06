@@ -369,7 +369,7 @@ function makeImageElement(
           copyright: {
             license: "CC BY-SA",
             title: svgAsset.altText.slice(0, 60),
-            author: "Equipo 36 HAS - Digitatón UAO 2026",
+            author: "Equipo 35 HAS - Digitatón UAO 2026",
             year: "2026",
           },
           width: svgAsset.width,
@@ -2319,7 +2319,7 @@ function compileSlideFromSpec(
 
 export function generatePh5pPythonScript(spec: HasProjectSpec): string {
   const lines: string[] = [
-    `"""${spec.title} — Generado automáticamente por HAS H5P Generator (EQ-36 UAO).`,
+    `"""${spec.title} — Generado automáticamente por HAS H5P Generator (EQ-35 UAO).`,
     `Curso: ${spec.courseName} | ${spec.moduleName}`,
     `Compatible con: python -I ph5p.py construir <curso>`,
     `"""`,

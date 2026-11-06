@@ -45,7 +45,7 @@ export default function LandingView({
           <div className="lg:col-span-7 space-y-6 text-left">
             <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/90 text-[#8A1428] text-xs font-semibold shadow-xs">
               <HasLogo size={20} />
-              <span>Digitatón UAO 2026 — Reto 11 · Equipo 36 (EQ-36)</span>
+              <span>Digitatón UAO 2026 — Reto 11 · Equipo 35 (EQ-35)</span>
             </div>
 
             <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
@@ -55,7 +55,7 @@ export default function LandingView({
             </h1>
 
             <p className="text-sm md:text-base text-slate-600 leading-relaxed max-w-2xl font-normal">
-              Plataforma web de autoría asistida por IA para docentes universitarios.
+              Plataforma web de autoría asistida por IA para profesores universitarios.
               Genera paquetes interactivos{" "}
               <strong className="text-slate-800 font-semibold">CoursePresentation 1.27</strong>{" "}
               basados en la plantilla institucional{" "}
@@ -114,7 +114,7 @@ export default function LandingView({
                   onClick={onOpenAuth}
                   className="px-4 py-3 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs md:text-sm font-medium transition"
                 >
-                  Acceso Docente / Jurado
+                  Acceso de profesor / jurado
                 </button>
               )}
             </div>
@@ -143,7 +143,7 @@ export default function LandingView({
             </p>
           </div>
           <span className="text-xs font-semibold text-[#8A1428] px-3 py-1 bg-rose-50 border border-rose-200 rounded-lg">
-            Equipo 36 (EQ-36)
+            Equipo 35 (EQ-35)
           </span>
         </div>
 
@@ -222,7 +222,7 @@ export default function LandingView({
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">
                     Inducción formativa con Slide 1 &apos;¿Cómo navegar?&apos; (exclusivo Actividad 0),
-                    diagnóstico interactivo y locución docente institucional.
+                    diagnóstico interactivo y locución académica institucional.
                   </p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
@@ -330,7 +330,7 @@ export default function LandingView({
               <Sparkles className="w-5 h-5 text-indigo-700" />
             </div>
             <h3 className="text-sm font-bold text-slate-900">
-              Copilot y Dictado por Voz Docente
+              Copilot y dictado por voz para profesores
             </h3>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
               Los profesores pueden dictar sus ideas en lenguaje natural. El asistente inteligente
@@ -358,7 +358,7 @@ export default function LandingView({
       <section className="rounded-3xl bg-gradient-to-r from-[#8A1428] to-[#5C0D1B] p-8 md:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-2 text-left">
           <div className="text-xs font-bold uppercase tracking-wider text-rose-200">
-            Digitatón UAO 2026 · Equipo 36
+            Digitatón UAO 2026 · Equipo 35
           </div>
           <h2 className="text-xl md:text-3xl font-extrabold">
             {isDemoMode ? "Explora recursos educativos de ejemplo" : "¿Listo para crear un nuevo recurso H5P?"}

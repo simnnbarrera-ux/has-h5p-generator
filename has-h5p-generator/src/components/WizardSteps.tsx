@@ -255,7 +255,7 @@ export default function WizardSteps({
     showToast(`Plantilla "${chosenTmpl.shortName}" seleccionada exitosamente.`);
   };
 
-  /* ---------- Reconocimiento de voz docente ---------- */
+  /* ---------- Reconocimiento de voz para profesores ---------- */
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -932,7 +932,7 @@ export default function WizardSteps({
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-[#8A1428]" />
-                  <span>Dictado por Voz Docente o Prompt Pedagógico</span>
+                  <span>Dictado por voz para profesores o prompt pedagógico</span>
                 </label>
 
                 <div className="flex items-center gap-2">
@@ -1786,7 +1786,7 @@ export default function WizardSteps({
                       Script Python (ph5p.py)
                     </div>
                     <div className="text-[10px] text-slate-500">
-                      Editable con la CLI propia ph5p (EQ-36)
+                      Editable con la CLI propia ph5p (EQ-35)
                     </div>
                   </div>
                 </div>

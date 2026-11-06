@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Validador Oficial H5P (Simulador de H5PValidator.php de Moodle y H5P Hub)
-Digitatón UAO 2026 - Equipo 36 HAS
+Digitatón UAO 2026 - Equipo 35 HAS
 """
 
 import sys

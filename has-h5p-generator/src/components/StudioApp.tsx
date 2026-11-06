@@ -269,7 +269,7 @@ export default function StudioApp() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand & Identity */}
           <div
-            onClick={() => setActiveView("landing")}
+            onClick={() => setActiveView(hasStudioAccess ? "dashboard" : "landing")}
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group shrink-0"
           >
             <HasLogo size={38} className="group-hover:scale-105 transition-transform shrink-0" />
@@ -279,7 +279,7 @@ export default function StudioApp() {
                   HAS H5P <span className="text-[#8A1428]">Generator</span>
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-bold text-white bg-[#8A1428] px-1.5 py-0.5 rounded uppercase tracking-wider">
-                  EQ-36
+                  EQ-35
                 </span>
               </div>
               <div className="text-[9px] sm:text-[10px] text-slate-500 font-medium leading-none mt-1 truncate max-w-[150px] sm:max-w-none">
@@ -291,17 +291,6 @@ export default function StudioApp() {
           {/* View Navigation Switcher (Only visible when authenticated) */}
           {hasStudioAccess && (
             <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80">
-              <button
-                type="button"
-                onClick={() => setActiveView("landing")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  activeView === "landing"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Portada
-              </button>
               <button
                 type="button"
                 onClick={() => setActiveView("dashboard")}
@@ -393,15 +382,6 @@ export default function StudioApp() {
       {/* Mobile Subnav (Only visible when authenticated) */}
       {hasStudioAccess && (
         <div className="md:hidden flex items-center justify-around bg-white border-b border-slate-200 p-2 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveView("landing")}
-            className={`py-1 px-3 rounded-lg ${
-              activeView === "landing" ? "bg-rose-50 text-[#8A1428]" : "text-slate-600"
-            }`}
-          >
-            Portada
-          </button>
           <button
             type="button"
             onClick={() => setActiveView("dashboard")}
@@ -516,7 +496,7 @@ export default function StudioApp() {
             <span className="font-extrabold text-slate-800">HAS H5P Generator</span>
             <span className="hidden sm:inline">·</span>
             <span className="font-bold text-[#8A1428] bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200/60">
-              Equipo 36 (EQ-36)
+              Equipo 35 (EQ-35)
             </span>
             <span className="hidden sm:inline">·</span>
             <span>Digitatón UAO 2026 (Reto 11)</span>
@@ -550,9 +530,13 @@ export default function StudioApp() {
           setIsDemoMode(false);
           setProfile(newProf);
           setIsAuthenticated(true);
+          setActiveView("dashboard");
+          setLoadingProjects(true);
           setProjects([]);
           void refreshAuthenticatedProjects().catch(() => {
             setProjects([]);
+          }).finally(() => {
+            setLoadingProjects(false);
           });
         }}
         onDemoAccess={startDemoProfile}

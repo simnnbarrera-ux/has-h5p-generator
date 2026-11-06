@@ -1,7 +1,7 @@
 // =============================================================================
 // HAS H5P Generator — Datos Semilla Oficiales del Reto 11 (Digitatón UAO 2026)
 // Curso: Matemáticas Discretas | Profesor: Oswaldo Rodríguez Díaz
-// Equipo 36 (EQ-36): Hermaioni, Alex, Simón | Orientadores EO-4: Adriana y Sara
+// Equipo 35 (EQ-35): Hermaioni, Alex, Simón | Orientadores EO-4: Adriana y Sara
 // =============================================================================
 
 import {
@@ -49,7 +49,7 @@ export const RETO11_ACT0_SPEC: HasProjectSpec = {
         "A lo largo de esta trayectoria formativa comprenderás cómo los computadores traducen el mundo continuo a representaciones discretas exactas (como los estándares IEEE-754 y ASCII) y cómo razonar rigurosamente sobre algoritmos mediante inducción matemática.",
       ],
       highlightBox:
-        "Docente autor: Prof. Oswaldo Rodríguez Díaz — Departamento de Matemáticas y Estadística, UAO.",
+        "Profesor: Oswaldo Rodríguez Díaz — Departamento de Matemáticas y Estadística, UAO.",
       apaReferences: [
         "Rosen, K. H. (2019). Matemáticas discretas y sus aplicaciones (8.ª ed.). McGraw-Hill.",
       ],

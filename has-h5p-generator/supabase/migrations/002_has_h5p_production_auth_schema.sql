@@ -1,6 +1,6 @@
 -- =============================================================================
 -- HAS H5P Generator — Migración SQL Completa para Producción (Supabase)
--- Proyecto: HAS H5P Generator | Digitatón UAO 2026 (Reto 11 - EQ-36)
+-- Proyecto: HAS H5P Generator | Digitatón UAO 2026 (Reto 11 - EQ-35)
 -- Configura: auth.users, has_profiles, has_projects, has_usage_logs, Storage y RLS
 -- =============================================================================
 
@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- -----------------------------------------------------------------------------
--- 2. Tabla de Perfiles Docentes (public.has_profiles)
+-- 2. Tabla de Perfiles de profesores (public.has_profiles)
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.has_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

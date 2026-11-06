@@ -10,8 +10,8 @@ export const maxDuration = 60;
 const CATALOG_SUMMARY = H5P_ACTIVITY_CATALOG.map(
   (activity) => `- ${activity.id}: ${activity.spanishName} — ${activity.pedagogicalUse}`
 ).join("\n");
-const SYSTEM_PROMPT_CHAT = `Eres HAS Copilot, un asistente pedagógico para diseñar recursos H5P accesibles y rigurosos para docentes de UAO. Responde en español, con propuestas concretas, breves y útiles. Actividades disponibles:\n${CATALOG_SUMMARY}`;
-const SYSTEM_PROMPT_GENERATE = `Devuelve únicamente JSON válido para un proyecto educativo H5P. Debe tener id, title, courseName, moduleName, activityNumber, templateId, defaultVoice, includeNavigationGuide, slides, auditReport y textChanges. Cada slide tiene id, templateSlide entero entre 1 y 32, menuTitle, titleBlack, paragraphs (lista) y puede incluir interaction/audioNarration. No escribas HTML ejecutable, scripts ni URLs data:. Usa textos docentes y referencias verificables si se proporcionan.`;
+const SYSTEM_PROMPT_CHAT = `Eres HAS Copilot, un asistente pedagógico para diseñar recursos H5P accesibles y rigurosos para profesores de UAO. Responde en español, con propuestas concretas, breves y útiles. Actividades disponibles:\n${CATALOG_SUMMARY}`;
+const SYSTEM_PROMPT_GENERATE = `Devuelve únicamente JSON válido para un proyecto educativo H5P. Debe tener id, title, courseName, moduleName, activityNumber, templateId, defaultVoice, includeNavigationGuide, slides, auditReport y textChanges. Cada slide tiene id, templateSlide entero entre 1 y 32, menuTitle, titleBlack, paragraphs (lista) y puede incluir interaction/audioNarration. No escribas HTML ejecutable, scripts ni URLs data:. Usa textos adecuados para profesores y referencias verificables si se proporcionan.`;
 
 function trimText(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";

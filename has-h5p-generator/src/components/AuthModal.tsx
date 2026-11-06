@@ -34,7 +34,7 @@ async function loadAuthenticatedProfile(): Promise<HasProfile> {
   }
 
   if (!data.profile) {
-    throw new Error("La sesión no tiene un perfil docente disponible.");
+    throw new Error("La sesión no tiene un perfil de profesor disponible.");
   }
 
   return data.profile;
@@ -144,10 +144,10 @@ export default function AuthModal({
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-rose-200">
-                Campus Virtual UAO · EQ-36
+                Campus Virtual UAO · EQ-35
               </div>
               <h2 className="text-sm sm:text-base font-bold leading-tight">
-                {mode === "login" ? "Iniciar Sesión Docente" : "Registrar Cuenta"}
+                {mode === "login" ? "Iniciar sesión de profesor" : "Registrar Cuenta"}
               </h2>
             </div>
           </div>

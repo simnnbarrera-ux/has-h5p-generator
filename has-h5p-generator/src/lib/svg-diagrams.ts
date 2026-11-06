@@ -29,7 +29,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     altText:
       "Ilustración institucional UAO sobre comunidad de aprendizaje virtual, foros colaborativos y ruta formativa en Matemáticas Discretas.",
     apaCitation:
-      "Equipo 36 HAS [Hermaioni, Alex, Simón]. (2026). Ecosistema de aprendizaje colaborativo UAO [Ilustración vectorial]. Universidad Autónoma de Occidente.",
+      "Equipo 35 HAS [Hermaioni, Alex, Simón]. (2026). Ecosistema de aprendizaje colaborativo UAO [Ilustración vectorial]. Universidad Autónoma de Occidente.",
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
   <defs>
     <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
@@ -97,7 +97,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     altText:
       "Diagrama técnico del estándar IEEE-754 de 32 bits (precisión simple: 1 bit de signo, 8 bits de exponente con sesgo 127 y 23 bits de mantisa) y 64 bits (precisión doble: 1 bit de signo, 11 bits de exponente con sesgo 1023 y 52 bits de mantisa) junto con la ecuación matemática de reconstrucción.",
     apaCitation:
-      "Institute of Electrical and Electronics Engineers [IEEE]. (2019). IEEE Standard for Floating-Point Arithmetic (IEEE 754-2019). Adaptado gráficamente por Equipo 36 HAS - UAO.",
+      "Institute of Electrical and Electronics Engineers [IEEE]. (2019). IEEE Standard for Floating-Point Arithmetic (IEEE 754-2019). Adaptado gráficamente por Equipo 35 HAS - UAO.",
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 580" width="860" height="580">
   <rect width="860" height="580" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="72" rx="14" fill="#8A1428"/>
@@ -164,7 +164,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     altText:
       "Diagrama formal de la Máquina de Turing con cinta infinita de celdas binarias, cabezal de lectura/escritura, unidad de control de estados finitos y definición de la 7-tupla M = (Q, Sigma, Gamma, delta, q0, B, F).",
     apaCitation:
-      "Barchini, G. E. (2008). Las Máquinas de Turing como Modelo General de la Computación. Revista Colombiana de Computación, 10(1), 7-25. Diagrama vectorial por Equipo 36 HAS.",
+      "Barchini, G. E. (2008). Las Máquinas de Turing como Modelo General de la Computación. Revista Colombiana de Computación, 10(1), 7-25. Diagrama vectorial por Equipo 35 HAS.",
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 560" width="860" height="560">
   <rect width="860" height="560" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="72" rx="14" fill="#8A1428"/>
@@ -232,7 +232,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     altText:
       "Diagrama de contención de los conjuntos numéricos Naturales (N), Enteros (Z), Racionales (Q), Irracionales (I) y Reales (R), destacando cuáles son representables de forma exacta en aritmética de punto flotante.",
     apaCitation:
-      "Rodríguez Díaz, O., & Equipo 36 HAS. (2026). Jerarquía de conjuntos numéricos y discretización en máquina [Diagrama conceptual]. Universidad Autónoma de Occidente.",
+      "Rodríguez Díaz, O., & Equipo 35 HAS. (2026). Jerarquía de conjuntos numéricos y discretización en máquina [Diagrama conceptual]. Universidad Autónoma de Occidente.",
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 540" width="840" height="540">
   <rect width="840" height="540" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="792" height="68" rx="14" fill="#8A1428"/>
@@ -281,7 +281,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     altText:
       "Esquema de codificación y decodificación de caracteres en código ASCII de 8 bits (1 byte por carácter) mostrando la conversión paso a paso entre texto, decimal, hexadecimal y binario.",
     apaCitation:
-      "American National Standards Institute [ANSI]. (1986). Coded Character Sets - 7-Bit American National Standard Code for Information Interchange (ASCII). Adaptado por Equipo 36 HAS - UAO.",
+      "American National Standards Institute [ANSI]. (1986). Coded Character Sets - 7-Bit American National Standard Code for Information Interchange (ASCII). Adaptado por Equipo 35 HAS - UAO.",
     svgContent: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 540" width="860" height="540">
   <rect width="860" height="540" rx="20" fill="#F8FAFC"/>
   <rect x="24" y="20" width="812" height="68" rx="14" fill="#8A1428"/>
@@ -403,6 +403,6 @@ export function generateCustomConceptSvg(params: {
     altText: `Infografía técnica institucional UAO sobre ${params.title}: ${params.subtitle}`,
     width: 840,
     height: 520,
-    apaCitation: `Equipo 36 HAS & Campus Digital UAO. (2026). ${params.title} [Esquema gráfico]. Universidad Autónoma de Occidente.`,
+    apaCitation: `Equipo 35 HAS & Campus Digital UAO. (2026). ${params.title} [Esquema gráfico]. Universidad Autónoma de Occidente.`,
   };
 }
