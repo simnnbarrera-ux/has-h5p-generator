@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAS: H5P Academic Studio — Digitatón UAO 2026 (Reto 11 - EQ-35)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --uao-red: #8A1428;
+      --uao-red-dark: #660E1D;
+      --uao-red-light: #FBEBED;
+      --uao-cyan: #0099E6;
+      --uao-blue: #0F172A;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --bg-page: #F1F5F9;
+      --bg-card: #FFFFFF;
+      --border-subtle: #E2E8F0;
+      --border-strong: #CBD5E1;
+      --badge-bg: rgba(138, 20, 40, 0.08);
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --slide-width: 1280px;
+      --slide-height: 720px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      height: 64px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo-badge {
+      background: var(--uao-red);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--uao-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .counter-pill {
+      background: #F8FAFC;
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--uao-red);
+      letter-spacing: 0.5px;
+      font-family: var(--font-mono);
+    }
+
+    .btn-nav {
+      background: #FFFFFF;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-nav:hover {
+      background: #F8FAFC;
+      border-color: var(--border-strong);
+      color: var(--uao-red);
+    }
+
+    .btn-nav.btn-primary {
+      background: var(--uao-red);
+      color: #FFFFFF;
+      border-color: var(--uao-red);
+    }
+
+    .btn-nav.btn-primary:hover {
+      background: var(--uao-red-dark);
+      border-color: var(--uao-red-dark);
+    }
+
+    /* PROGRESS BAR */
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      background: #E2E8F0;
+      position: sticky;
+      top: 64px;
+      z-index: 49;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--uao-red), var(--uao-cyan));
+      width: 10%;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* SLIDE STAGE */
+    .stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .slide-viewport {
+      width: 100%;
+      max-width: var(--slide-width);
+      min-height: var(--slide-height);
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      padding: 44px 52px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* SLIDE HEADER */
+    .slide-header {
+      margin-bottom: 24px;
+    }
+
+    .badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--badge-bg);
+      color: var(--uao-red);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .slide-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--uao-blue);
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+    }
+
+    .slide-subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    /* SLIDE BODY */
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* GRIDS & CARDS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+    }
+
+    .card-accent-red {
+      border-top: 4px solid var(--uao-red);
+    }
+
+    .card-accent-blue {
+      border-top: 4px solid var(--uao-cyan);
+    }
+
+    .card-accent-dark {
+      border-top: 4px solid var(--uao-blue);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--uao-blue);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .card-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      color: var(--uao-red);
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      margin-bottom: 12px;
+    }
+
+    /* PILLS & TAGS */
+    .pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #F1F5F9;
+      color: var(--text-secondary);
+      margin-right: 6px;
+      margin-top: 6px;
+    }
+
+    .pill-red {
+      background: var(--uao-red-light);
+      color: var(--uao-red-dark);
+      font-weight: 700;
+    }
+
+    .pill-blue {
+      background: #E0F2FE;
+      color: #0369A1;
+      font-weight: 700;
+    }
+
+    /* SLIDE 1: HERO COVER */
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 36px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .hero-title {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--uao-blue);
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .hero-highlight {
+      color: var(--uao-red);
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    .hero-team-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .team-badge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+    }
+
+    .team-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--uao-red);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .team-member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px dashed #E2E8F0;
+      font-size: 13px;
+    }
+
+    .team-member-item:last-child {
+      border-bottom: none;
+    }
+
+    .member-name {
+      font-weight: 700;
+      color: var(--uao-blue);
+    }
+
+    .member-id {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .member-role {
+      font-size: 11px;
+      font-weight: 600;
+      color: #0369A1;
+      background: #E0F2FE;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    /* CODE BOX */
+    .code-box {
+      background: #0F172A;
+      color: #F8FAFC;
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      border: 1px solid #1E293B;
+      overflow-x: auto;
+    }
+
+    .code-box .token-kw { color: #38BDF8; font-weight: 700; }
+    .code-box .token-fn { color: #A78BFA; }
+    .code-box .token-str { color: #4ADE80; }
+    .code-box .token-comm { color: #64748B; font-style: italic; }
+
+    /* STAT CARD */
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 34px;
+      font-weight: 800;
+      color: var(--uao-red);
+      font-family: var(--font-mono);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--uao-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* BOTTOM NAV BAR */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 18px;
+      margin-top: auto;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .slide-footer-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-dot {
+      width: 4px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 50%;
+    }
+
+    /* OVERVIEW MODAL / DRAWER */
+    .overview-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .overview-backdrop.open {
+      display: flex;
+    }
+
+    .overview-modal {
+      background: #FFFFFF;
+      border-radius: 16px;
+      max-width: 1000px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 32px;
+      box-shadow: 0 20px 48px rgba(0,0,0,0.25);
+    }
+
+    .overview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .overview-item {
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 14px;
+      background: #F8FAFC;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .overview-item:hover {
+      border-color: var(--uao-red);
+      background: #FFFFFF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(138, 20, 40, 0.08);
+    }
+
+    .overview-item.active {
+      border-color: var(--uao-red);
+      background: var(--uao-red-light);
+    }
+
+    .overview-num {
+      font-size: 11px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--uao-red);
+    }
+
+    .overview-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--uao-blue);
+      line-height: 1.3;
+    }
+
+    /* KEYBOARD HINTS */
+    .keyboard-hint {
+      position: fixed;
+      bottom: 16px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #FFFFFF;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 40;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .key-badge {
+      background: #334155;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    /* LINKS BOX */
+    .links-card {
+      background: #F8FAFC;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .links-card:hover {
+      border-color: var(--uao-cyan);
+      background: #FFFFFF;
+    }
+
+    .link-info-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--uao-blue);
+      margin-bottom: 2px;
+    }
+
+    .link-info-url {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #0284C7;
+      word-break: break-all;
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      body {
+        background: #FFFFFF !important;
+      }
+      .top-bar, .progress-track, .keyboard-hint, .overview-backdrop {
+        display: none !important;
+      }
+      .stage {
+        padding: 0 !important;
+      }
+      .slide-viewport {
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+      }
+      .slide {
+        display: flex !important;
+        opacity: 1 !important;
+        transform: none !important;
+        page-break-after: always;
+        min-height: 100vh;
+        padding: 40px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <div class="brand-section">
+      <div class="brand-logo-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+          <path d="M6 6h10"></path>
+          <path d="M6 10h10"></path>
+        </svg>
+        <span>UAO</span>
+      </div>
+      <div class="brand-title-group">
+        <span class="brand-title">DIGITATÓN UAO 2026 — RETO 11 (EQ-35)</span>
+        <span class="brand-subtitle">Campus Digital UAO • HAS: H5P Academic Studio</span>
+      </div>
+    </div>
+
+    <div class="top-controls">
+      <span class="counter-pill" id="slide-counter">01 / 10</span>
+      <button class="btn-nav" id="btn-prev" onclick="prevSlide()" title="Diapositiva anterior (Flecha Izquierda)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        <span>Anterior</span>
+      </button>
+      <button class="btn-nav btn-primary" id="btn-next" onclick="nextSlide()" title="Siguiente diapositiva (Flecha Derecha / Espacio)">
+        <span>Siguiente</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+      <button class="btn-nav" onclick="toggleOverview()" title="Ver índice de diapositivas">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Índice</span>
+      </button>
+      <button class="btn-nav" onclick="toggleFullscreen()" title="Pantalla completa">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      </button>
+      <button class="btn-nav" onclick="window.print()" title="Imprimir / Exportar a PDF">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- STAGE -->
+  <main class="stage">
+    <div class="slide-viewport">
+
+      <!-- SLIDE 1: PORTADA -->
+      <section class="slide active" id="slide-1">
+        <div class="hero-layout">
+          <div>
+            <div class="badge-tag">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <circle cx="12" cy="12" r="10"></circle>
+              </svg>
+              <span>Digitatón UAO 2026 • Reto 11</span>
+            </div>
+            <h1 class="hero-title">
+              HAS: <span class="hero-highlight">H5P Academic Studio</span>
+            </h1>
+            <p class="hero-desc">
+              Plataforma de co-creación y automatización integral de recursos educativos interactivos H5P para el Campus Digital de la Universidad Autónoma de Occidente.
+            </p>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;">
+              <span class="pill pill-red">Automatización Headless</span>
+              <span class="pill pill-blue">Estándar Moodle Core</span>
+              <span class="pill">20 Plantillas UAO</span>
+              <span class="pill">Locución Neuronal Colombiana</span>
+              <span class="pill">WCAG 2.1 AAA</span>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+              <a href="https://has-h5p-generator.vercel.app" target="_blank" class="btn-nav btn-primary" style="text-decoration: none; padding: 10px 18px; font-size: 13px;">
+                <span>Probar Plataforma en Vivo</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+              <a href="https://drive.google.com/drive/folders/1N7C3jzpasm95fOpf5kf7PeD7_MBum80w?usp=sharing" target="_blank" class="btn-nav" style="text-decoration: none; padding: 10px 18px; font-size: 13px;">
+                <span>Carpeta Oficial Drive</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <div class="hero-team-box">
+              <div class="team-badge-header">
+                <span class="team-title">Equipo 35 (EQ-35)</span>
+                <span class="pill pill-red" style="margin: 0;">Ingeniería UAO</span>
+              </div>
+              <div class="team-member-item">
+                <div>
+                  <div class="member-name">Hermaioni Delgado Paz</div>
+                  <div class="member-id">ID: 1108567123</div>
+                </div>
+                <span class="member-role">Analyst & Pedagogy</span>
+              </div>
+              <div class="team-member-item">
+                <div>
+                  <div class="member-name">Alex Silva</div>
+                  <div class="member-id">Cód: 2235771</div>
+                </div>
+                <span class="member-role">Fullstack Developer</span>
+              </div>
+              <div class="team-member-item">
+                <div>
+                  <div class="member-name">Simón Barrera Ruíz</div>
+                  <div class="member-id">Cód: 2236174</div>
+                </div>
+                <span class="member-role">Lead Engine Developer</span>
+              </div>
+              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); font-size: 11px; color: var(--text-muted); text-align: center;">
+                Facultad de Ingeniería y Ciencias Básicas<br>Universidad Autónoma de Occidente — Cali, Colombia
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Reto 11: Campus Digital UAO</span>
+            <span class="footer-dot"></span>
+            <span>Entrega Oficial Digitatón 2026</span>
+          </div>
+          <span>Usa las teclas de flecha para navegar</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 2: PROBLEMÁTICA -->
+      <section class="slide" id="slide-2">
+        <div class="slide-header">
+          <div class="badge-tag">Contexto Institucional</div>
+          <h2 class="slide-title">La Problemática Docente en el Campus Digital</h2>
+          <p class="slide-subtitle">La brecha entre el propósito pedagógico del profesor y las dificultades técnicas al construir material interactivo para Moodle.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card card-accent-red">
+              <div class="card-num">01</div>
+              <h3 class="card-title">Tiempo Extensivo</h3>
+              <p class="card-desc">Construir una presentación interactiva H5P de calidad toma entre 4 y 8 horas por lección. Los docentes no disponen de este tiempo en su carga horaria semanal.</p>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">02</div>
+              <h3 class="card-title">Fricción Técnica</h3>
+              <p class="card-desc">Las herramientas de autor H5P en Moodle tienen interfaces complejas, requieren configurar manualmente decenas de campos JSON y no ofrecen plantillas prediseñadas.</p>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">03</div>
+              <h3 class="card-title">Inconsistencia Visual</h3>
+              <p class="card-desc">Falta de estandarización en la identidad gráfica institucional UAO, contrastes inadecuados que incumplen WCAG y layouts saturados de texto poco didácticos.</p>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">04</div>
+              <h3 class="card-title">Aislamiento de Recursos</h3>
+              <p class="card-desc">El contenido queda atrapado en archivos estáticos (PDF o PPTX) sin preguntas formativas inmediatas, desaprovechando el potencial pedagógico del LMS.</p>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; background: #F8FAFC; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: var(--uao-blue);">El Desafío del Reto 11:</span>
+              <span style="font-size: 13px; color: var(--text-secondary); margin-left: 8px;">Diseñar una metodología y plataforma que democratice la producción de H5P sin requerir conocimientos técnicos.</span>
+            </div>
+            <span class="pill pill-red">Impacto Multi-facultad</span>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Diagnóstico Educativo UAO</span>
+            <span class="footer-dot"></span>
+            <span>Punto de partida del desarrollo</span>
+          </div>
+          <span>02 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 3: LA SOLUCIÓN HAS -->
+      <section class="slide" id="slide-3">
+        <div class="slide-header">
+          <div class="badge-tag">Nuestra Innovación</div>
+          <h2 class="slide-title">HAS (H5P Academic Studio): La Solución Integral</h2>
+          <p class="slide-subtitle">Un software que automatiza la creación de lecciones interactivas H5P completas en minutos a partir de temas académicos.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3" style="margin-bottom: 24px;">
+            <div class="card card-accent-red">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--uao-red)" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                Estructuración Pedagógica
+              </h3>
+              <p class="card-desc">El docente solo define el tema o syllabus y HAS desglosa la clase en una secuencia didáctica óptima: introducción conceptual, desarrollo por pasos, diagramas y síntesis.</p>
+            </div>
+
+            <div class="card card-accent-blue">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--uao-cyan)" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Interactividad Automática
+              </h3>
+              <p class="card-desc">Inserta estratégicamente micro-evaluaciones nativas H5P (opción múltiple, falso/verdadero y reflexiones) con retroalimentación formativa inmediata para el estudiante.</p>
+            </div>
+
+            <div class="card card-accent-dark">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--uao-blue)" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                Compilación Estándar Moodle
+              </h3>
+              <p class="card-desc">Genera paquetes binarios <code>.h5p</code> oficiales, 100% compatibles con Moodle Core UAO, sin dependencias externas propietarias ni riesgos de incompatibilidad.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div style="background: #F8FAFC; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--uao-red); text-transform: uppercase; margin-bottom: 8px;">Antes (Flujo Tradicional Manual)</div>
+              <ul style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; padding-left: 18px;">
+                <li>El profesor redacta manualmente cada cuadro de texto.</li>
+                <li>Diseña botones y coloca coordenadas elemento por elemento.</li>
+                <li>Configura tipografías y colores sin guía institucional.</li>
+                <li>Tiempo promedio: <strong>360 a 480 minutos por recurso</strong>.</li>
+              </ul>
+            </div>
+
+            <div style="background: var(--uao-red-light); border: 1px solid rgba(138, 20, 40, 0.2); border-radius: 12px; padding: 18px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--uao-red-dark); text-transform: uppercase; margin-bottom: 8px;">Con HAS (H5P Academic Studio)</div>
+              <ul style="font-size: 13px; color: var(--uao-blue); line-height: 1.6; padding-left: 18px;">
+                <li>Ingreso de prompt pedagógico o syllabus temático.</li>
+                <li>Generación instantánea de 20+ diapositivas con jerarquía visual.</li>
+                <li>Previsualización en tiempo real y descarga con 1 clic.</li>
+                <li>Tiempo promedio: <strong>Menos de 3 minutos por recurso</strong>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Propuesta de Valor</span>
+            <span class="footer-dot"></span>
+            <span>Optimización del 95% en tiempo de autoría</span>
+          </div>
+          <span>03 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 4: H5P DEL RETO 11 -->
+      <section class="slide" id="slide-4">
+        <div class="slide-header">
+          <div class="badge-tag">Entregable Obligatorio</div>
+          <h2 class="slide-title">Recursos H5P Desarrollados para el Reto 11</h2>
+          <p class="slide-subtitle">Diseño pedagógico riguroso de las Actividades Faro solicitadas para el curso de Matemáticas Discretas UAO.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2" style="margin-bottom: 20px;">
+            <div class="card card-accent-red">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="pill pill-red">Actividad Faro 1</span>
+                <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">26 Diapositivas</span>
+              </div>
+              <h3 class="card-title">Del dato al código digital: IEEE-754 y ASCII</h3>
+              <p class="card-desc" style="margin-bottom: 14px;">
+                Representación discreta de los números en las máquinas digitales. Diseñada para que el estudiante comprenda la brecha entre la recta matemática continua y la finitud de bits del hardware.
+              </p>
+              <div style="font-size: 12px; line-height: 1.5; color: var(--text-secondary);">
+                <div><strong>Ejes Conceptuales:</strong></div>
+                <ul style="padding-left: 18px; margin-top: 4px;">
+                  <li>Jerarquía de conjuntos numéricos (Naturales, Enteros vs Reales continuos).</li>
+                  <li>Estándar IEEE-754 de coma flotante: Signo, Exponente sesgado y Mantisa.</li>
+                  <li>Errores de redondeo y truncamiento en arquitecturas de cómputo.</li>
+                  <li>Codificación de caracteres ASCII y mapeo a secuencias binarias.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card card-accent-blue">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <span class="pill pill-blue">Actividad Faro 0</span>
+                <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);">Módulo Teórico</span>
+              </div>
+              <h3 class="card-title">Máquinas de Turing y Lenguajes Formales</h3>
+              <p class="card-desc" style="margin-bottom: 14px;">
+                Fundamentos matemáticos de la computación. Modelo formal de máquina de estados finitos con cinta infinita y tesis de Church-Turing.
+              </p>
+              <div style="font-size: 12px; line-height: 1.5; color: var(--text-secondary);">
+                <div><strong>Ejes Conceptuales:</strong></div>
+                <ul style="padding-left: 18px; margin-top: 4px;">
+                  <li>Definición formal de la 7-tupla de la Máquina de Turing.</li>
+                  <li>Estados de control, transiciones y alfabeto de cinta.</li>
+                  <li>Equivalencia entre algoritmos computables y lenguajes formales.</li>
+                  <li>Transición desde la teoría abstracta hacia la arquitectura digital moderna.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #FFFFFF; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <span style="font-size: 12px; font-weight: 700; color: var(--uao-blue); text-transform: uppercase;">Interactividad Embebida:</span>
+              <span style="font-size: 12px; color: var(--text-secondary); margin-left: 8px;">Micro-preguntas formativas cada 4 diapositivas, retroalimentación explicativa con justificación matemática y cálculo interactivo de mantisa.</span>
+            </div>
+            <span class="pill">H5P CoursePresentation 1.25</span>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Contenido Curricular Faro</span>
+            <span class="footer-dot"></span>
+            <span>Alineado con el syllabus de Matemáticas Discretas FIUAO</span>
+          </div>
+          <span>04 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 5: EL WIZARD EN 5 PASOS -->
+      <section class="slide" id="slide-5">
+        <div class="slide-header">
+          <div class="badge-tag">Experiencia de Usuario</div>
+          <h2 class="slide-title">El Flujo Guiado en 5 Pasos (Wizard HAS)</h2>
+          <p class="slide-subtitle">Una interfaz intuitiva diseñada para que cualquier docente pueda generar su recurso interactivo sin barreras técnicas.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-5">
+            <div class="card card-accent-red">
+              <div class="card-num">01</div>
+              <h3 class="card-title" style="font-size: 13px;">Origen del Tema</h3>
+              <p class="card-desc" style="font-size: 12px;">Ingreso del título, propósito pedagógico, conceptos clave o carga directa del syllabus del curso.</p>
+              <div style="margin-top: auto; padding-top: 8px;">
+                <span class="pill">Prompt / Syllabus</span>
+              </div>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">02</div>
+              <h3 class="card-title" style="font-size: 13px;">Actividades H5P</h3>
+              <p class="card-desc" style="font-size: 12px;">Selección de densidad evaluativa: preguntas de opción múltiple, falso/verdadero y checkpoints.</p>
+              <div style="margin-top: auto; padding-top: 8px;">
+                <span class="pill">Formativo DUA</span>
+              </div>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">03</div>
+              <h3 class="card-title" style="font-size: 13px;">Diseño & Locución</h3>
+              <p class="card-desc" style="font-size: 12px;">Elección de una de las 20 plantillas institucionales UAO y activación de la voz con acento colombiano.</p>
+              <div style="margin-top: auto; padding-top: 8px;">
+                <span class="pill">20 Plantillas UAO</span>
+              </div>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">04</div>
+              <h3 class="card-title" style="font-size: 13px;">Editor Visual</h3>
+              <p class="card-desc" style="font-size: 12px;">Ajuste fino de contenidos, revisión de tarjetas, llamadas de atención pedagógicas y diagramas técnicos.</p>
+              <div style="margin-top: auto; padding-top: 8px;">
+                <span class="pill">Layout Modular</span>
+              </div>
+            </div>
+
+            <div class="card card-accent-red">
+              <div class="card-num">05</div>
+              <h3 class="card-title" style="font-size: 13px;">Previsualizar & Exportar</h3>
+              <p class="card-desc" style="font-size: 12px;">Reproductor oficial H5P integrado en tiempo real y descarga en 1 clic del archivo <code>.h5p</code> para Moodle.</p>
+              <div style="margin-top: auto; padding-top: 8px;">
+                <span class="pill pill-red">Descarga .h5p</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; background: #0F172A; color: #F8FAFC; border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: #38BDF8;">Feedback en Tiempo Real:</div>
+              <div style="font-size: 12px; color: #94A3B8; margin-top: 2px;">El motor valida automáticamente la integridad de los parámetros H5P antes de compilar, evitando errores de importación en Moodle.</div>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 12px; color: #4ADE80; font-weight: 700;">Validación Schema 100% OK</div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Flujo de Trabajo Docente</span>
+            <span class="footer-dot"></span>
+            <span>Diseño centrado en la usabilidad y la agilidad</span>
+          </div>
+          <span>05 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 6: ARQUITECTURA TÉCNICA -->
+      <section class="slide" id="slide-6">
+        <div class="slide-header">
+          <div class="badge-tag">Ingeniería del Software</div>
+          <h2 class="slide-title">Arquitectura Técnica y Motor de Compilación Headless</h2>
+          <p class="slide-subtitle">Un pipeline de desarrollo moderno, escalable, tipado de extremo a extremo y desacoplado de dependencias frágiles.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2">
+            <div>
+              <div class="card card-accent-dark" style="margin-bottom: 16px;">
+                <h3 class="card-title">Pipeline de Compilación H5P</h3>
+                <p class="card-desc" style="margin-bottom: 10px;">
+                  El motor compila dinámicamente un archivo ZIP conforme a la especificación oficial H5P:
+                </p>
+                <div class="code-box">
+<span class="token-comm">// Estructura interna del paquete generado</span>
+recurso-academico.h5p (ZIP binario)
+├── <span class="token-kw">h5p.json</span>           <span class="token-comm"># Manifiesto y dependencias de librerías</span>
+├── <span class="token-fn">content/</span>
+│   └── <span class="token-kw">content.json</span>   <span class="token-comm"># Árbol JSON de slides, textos, audios e interacciones</span>
+└── <span class="token-fn">H5P.CoursePresentation-1.25/</span> <span class="token-comm"># Assets y JS del reproductor</span></div>
+              </div>
+
+              <div style="background: #F8FAFC; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 18px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--uao-blue);">Validación de Esquema:</span>
+                <span style="font-size: 12px; color: var(--text-secondary); margin-left: 6px;">Uso de <code>Zod</code> para tipar todas las diapositivas y parámetros de interacción, eliminando inconsistencias en tiempo de ejecución.</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="grid-2" style="gap: 14px; margin-bottom: 16px;">
+                <div class="card">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--uao-red); text-transform: uppercase;">Frontend & UI</div>
+                  <div style="font-size: 14px; font-weight: 800; color: var(--uao-blue); margin-top: 4px;">Next.js App Router</div>
+                  <p class="card-desc" style="font-size: 11px; margin-top: 4px;">React moderno con renderizado híbrido y componentes accesibles Tailwind.</p>
+                </div>
+
+                <div class="card">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--uao-cyan); text-transform: uppercase;">Previsualizador</div>
+                  <div style="font-size: 14px; font-weight: 800; color: var(--uao-blue); margin-top: 4px;">H5P Standalone</div>
+                  <p class="card-desc" style="font-size: 11px; margin-top: 4px;">Visor nativo incrustado en iframe para validación previa sin salir de la app.</p>
+                </div>
+
+                <div class="card">
+                  <div style="font-size: 11px; font-weight: 700; color: #10B981; text-transform: uppercase;">Persistencia</div>
+                  <div style="font-size: 14px; font-weight: 800; color: var(--uao-blue); margin-top: 4px;">PostgreSQL / Supabase</div>
+                  <p class="card-desc" style="font-size: 11px; margin-top: 4px;">Persistencia relacional de proyectos, historial de revisiones y catálogo.</p>
+                </div>
+
+                <div class="card">
+                  <div style="font-size: 11px; font-weight: 700; color: #8B5CF6; text-transform: uppercase;">Compilación Headless</div>
+                  <div style="font-size: 14px; font-weight: 800; color: var(--uao-blue); margin-top: 4px;">Archiver & Sharp</div>
+                  <p class="card-desc" style="font-size: 11px; margin-top: 4px;">Ensamblaje binario de alta velocidad con procesamiento de activos gráficos.</p>
+                </div>
+              </div>
+
+              <div style="background: var(--uao-red-light); border: 1px solid rgba(138, 20, 40, 0.2); border-radius: 12px; padding: 14px 18px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--uao-red-dark);">Cero Bloqueos:</span>
+                <span style="font-size: 12px; color: var(--uao-blue); margin-left: 6px;">El sistema no requiere backend de Moodle para generar o probar el contenido; el archivo resultante es totalmente autónomo y portable.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Stack de Ingeniería</span>
+            <span class="footer-dot"></span>
+            <span>TypeScript estricto y estándares web abiertos</span>
+          </div>
+          <span>06 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 7: PLANTILLAS INSTITUCIONALES -->
+      <section class="slide" id="slide-7">
+        <div class="slide-header">
+          <div class="badge-tag">Identidad Institucional</div>
+          <h2 class="slide-title">Catálogo de 20 Plantillas Institucionales UAO</h2>
+          <p class="slide-subtitle">Diseños acordes a la identidad visual de la Universidad Autónoma de Occidente, clasificados por facultades y con accesibilidad WCAG AAA.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-4" style="margin-bottom: 20px;">
+            <div class="card card-accent-red">
+              <div style="font-size: 11px; font-weight: 700; color: var(--uao-red); text-transform: uppercase;">Facultad de Ingeniería</div>
+              <h3 class="card-title" style="margin-top: 6px;">FIUAO Técnico</h3>
+              <p class="card-desc">Diseñada para programación, matemáticas, circuitos y sistemas. Integra cajas de código monoespaciadas, fórmulas y esquemas conceptuales.</p>
+              <div style="margin-top: auto; padding-top: 10px;">
+                <span class="pill pill-red">Rojo UAO #8A1428</span>
+              </div>
+            </div>
+
+            <div class="card card-accent-blue">
+              <div style="font-size: 11px; font-weight: 700; color: #0284C7; text-transform: uppercase;">Ciencias Administrativas</div>
+              <h3 class="card-title" style="margin-top: 6px;">FCA Ejecutivo</h3>
+              <p class="card-desc">Estructura limpia para finanzas, mercadeo y gestión. Enfatiza gráficos comparativos, árboles de decisión y matrices FODA.</p>
+              <div style="margin-top: auto; padding-top: 10px;">
+                <span class="pill pill-blue">Azul Océano #0284C7</span>
+              </div>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #10B981;">
+              <div style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase;">Humanidades y Artes</div>
+              <h3 class="card-title" style="margin-top: 6px;">FCH Editorial</h3>
+              <p class="card-desc">Optimizado para lectura reflexiva, ética, filosofía y ciencias sociales. Jerarquía tipográfica con citas destacadas y preguntas de debate.</p>
+              <div style="margin-top: auto; padding-top: 10px;">
+                <span class="pill" style="background: #D1FAE5; color: #065F46;">Verde Sabiduría</span>
+              </div>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #F59E0B;">
+              <div style="font-size: 11px; font-weight: 700; color: #D97706; text-transform: uppercase;">Comunicación y Medios</div>
+              <h3 class="card-title" style="margin-top: 6px;">FCS Narrativa</h3>
+              <p class="card-desc">Composición orientada al storytelling, medios audiovisuales y diseño. Tarjetas visuales amplias y áreas de reflexión crítica.</p>
+              <div style="margin-top: auto; padding-top: 10px;">
+                <span class="pill" style="background: #FEF3C7; color: #92400E;">Ámbar Dinámico</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div style="background: #FFFFFF; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px 20px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--uao-blue); margin-bottom: 6px;">Cumplimiento de Accesibilidad WCAG 2.1</div>
+              <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                Todas las plantillas garantizan un ratio de contraste mínimo de 4.5:1 para textos normales y superior a 7:1 para encabezados. El contenido es legible para usuarios con baja visión o daltonismo.
+              </p>
+            </div>
+
+            <div style="background: #FFFFFF; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 16px 20px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--uao-blue); margin-bottom: 6px;">Flexibilidad de Reutilización</div>
+              <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                Cualquier facultad de la Universidad puede crear nuevas plantillas con sus paletas oficiales mediante la extensión del catálogo en formato JSON estandarizado.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Estandarización Gráfica</span>
+            <span class="footer-dot"></span>
+            <span>20 diseños pre-aprobados listos para usar</span>
+          </div>
+          <span>07 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 8: ACCESIBILIDAD Y LOCUCIÓN -->
+      <section class="slide" id="slide-8">
+        <div class="slide-header">
+          <div class="badge-tag">Inclusión Educativa</div>
+          <h2 class="slide-title">Locución Neuronal y Diseño Universal para el Aprendizaje (DUA)</h2>
+          <p class="slide-subtitle">Garantizando que los recursos educativos sean accesibles para todos los estudiantes, independientemente de sus capacidades o estilos de aprendizaje.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-3" style="margin-bottom: 24px;">
+            <div class="card card-accent-red">
+              <h3 class="card-title">Locución con Acento Colombiano</h3>
+              <p class="card-desc">
+                Integración de síntesis de voz neuronal en español (Colombia) con entonación pedagógica natural, evitando voces robotizadas extranjeras y favoreciendo la cercanía y concentración del estudiante.
+              </p>
+            </div>
+
+            <div class="card card-accent-blue">
+              <h3 class="card-title">Doble Vía de Entrada Sensorial</h3>
+              <p class="card-desc">
+                El estudiante puede leer el contenido visual en pantalla y escuchar simultáneamente la explicación auditiva de cada diapositiva mediante un reproductor no invasivo.
+              </p>
+            </div>
+
+            <div class="card card-accent-dark">
+              <h3 class="card-title">Diagramas Vectoriales SVG</h3>
+              <p class="card-desc">
+                Los esquemas y arquitecturas se generan en formato vectorial limpio, garantizando nitidez perfecta en cualquier resolución y eliminando imágenes pixeladas o no encontradas.
+              </p>
+            </div>
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 20px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--uao-red-light); color: var(--uao-red); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--uao-blue);">Inclusión Efectiva en el Campus Digital UAO</div>
+              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
+                Permite a estudiantes con dificultades visuales, déficit de atención o condiciones de movilidad seguir el curso al mismo ritmo que sus compañeros, cumpliendo con la política institucional de equidad educativa.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Principios DUA</span>
+            <span class="footer-dot"></span>
+            <span>Múltiples formas de representación y compromiso</span>
+          </div>
+          <span>08 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 9: RESULTADOS E IMPACTO -->
+      <section class="slide" id="slide-9">
+        <div class="slide-header">
+          <div class="badge-tag">Evaluación de Resultados</div>
+          <h2 class="slide-title">Métricas de Impacto y Eficiencia Operativa</h2>
+          <p class="slide-subtitle">Cuantificación del salto cualitativo logrado con HAS frente a los métodos convencionales de producción educativa.</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-value">96%</div>
+              <div class="stat-label">Ahorro de Tiempo</div>
+              <div class="stat-desc">De 6 horas a menos de 3 minutos por recurso interactivo completo.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-value">100%</div>
+              <div class="stat-label">Compatibilidad Moodle</div>
+              <div class="stat-desc">Validado en pruebas de subida directa a la plataforma del Campus Digital.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-value">20</div>
+              <div class="stat-label">Plantillas UAO</div>
+              <div class="stat-desc">Diseños pre-configurados para todas las facultades de la Universidad.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-value">0 $</div>
+              <div class="stat-label">Costo por Licencias</div>
+              <div class="stat-desc">Desarrollado sobre estándares abiertos y software libre sin ataduras propietarias.</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3 class="card-title" style="color: var(--uao-red);">Impacto para el Profesorado</h3>
+              <p class="card-desc">
+                Elimina por completo la barrera tecnológica y el agotamiento operativo. Los profesores pueden concentrarse en lo que mejor saben hacer: enseñar, diseñar secuencias de aprendizaje y guiar a sus estudiantes.
+              </p>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title" style="color: #0284C7;">Impacto para los Estudiantes</h3>
+              <p class="card-desc">
+                Cursos con materiales más dinámicos, autoevaluación continua sin esperar a los parciales, y un entorno virtual que motiva el estudio activo frente a la lectura pasiva tradicional.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Resultados Medibles</span>
+            <span class="footer-dot"></span>
+            <span>Escalable a toda la oferta académica UAO</span>
+          </div>
+          <span>09 / 10</span>
+        </div>
+      </section>
+
+      <!-- SLIDE 10: CONCLUSIÓN Y CESIÓN -->
+      <section class="slide" id="slide-10">
+        <div class="slide-header">
+          <div class="badge-tag">Cierre Institucional</div>
+          <h2 class="slide-title">Enlaces Oficiales, Cesión Institucional y Conclusiones</h2>
+          <p class="slide-subtitle">Entrega final del Reto 11 — Digitatón UAO 2026 a cargo del Equipo 35 (EQ-35).</p>
+        </div>
+
+        <div class="slide-body">
+          <div class="grid-2" style="margin-bottom: 20px;">
+            <div class="card card-accent-red">
+              <h3 class="card-title">Enlaces de Acceso y Entregables</h3>
+              <p class="card-desc" style="margin-bottom: 12px;">Todos los recursos y el software se encuentran desplegados y listos para su uso y auditoría inmediata:</p>
+
+              <div class="links-card">
+                <div>
+                  <div class="link-info-title">Plataforma HAS en Vivo</div>
+                  <div class="link-info-url">https://has-h5p-generator.vercel.app</div>
+                </div>
+                <a href="https://has-h5p-generator.vercel.app" target="_blank" class="btn-nav btn-primary" style="text-decoration: none; padding: 6px 12px; font-size: 11px;">Abrir</a>
+              </div>
+
+              <div class="links-card">
+                <div>
+                  <div class="link-info-title">Carpeta Oficial de Google Drive</div>
+                  <div class="link-info-url">Paquetes .h5p, documentación y presentación</div>
+                </div>
+                <a href="https://drive.google.com/drive/folders/1N7C3jzpasm95fOpf5kf7PeD7_MBum80w?usp=sharing" target="_blank" class="btn-nav" style="text-decoration: none; padding: 6px 12px; font-size: 11px;">Drive</a>
+              </div>
+            </div>
+
+            <div class="card card-accent-dark">
+              <h3 class="card-title">Cesión de Derechos Institucionales</h3>
+              <p class="card-desc" style="font-size: 12.5px; line-height: 1.55; margin-bottom: 12px;">
+                El <strong>Equipo 35 (EQ-35)</strong> deja expresa constancia de su entera disposición y compromiso para efectuar la respectiva <strong>cesión de derechos patrimoniales y de uso</strong> de la plataforma HAS a favor de la <strong>Universidad Autónoma de Occidente</strong>, con el fin de que sea integrada, adoptada y escalada en el Campus Digital institucional.
+              </p>
+              <div style="background: #F8FAFC; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 14px; font-size: 11px; color: var(--text-secondary);">
+                <strong>Nota de Propiedad Intelectual:</strong> De conformidad con la legislación aplicable, el desarrollo técnico, arquitectura e ingeniería del software permanece bajo la autoría moral e intelectual de sus desarrolladores: Hermaioni Delgado Paz, Alex Silva y Simón Barrera Ruíz.
+              </div>
+            </div>
+          </div>
+
+          <div style="background: var(--uao-red); color: #FFFFFF; border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">¡Gracias a la Dirección de Campus Digital y a la UAO!</div>
+              <div style="font-size: 12px; opacity: 0.9; margin-top: 2px;">Juntos transformamos la educación universitaria mediante innovación tecnológica real y accesible.</div>
+            </div>
+            <div style="font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 6px;">
+              Equipo 35 — Digitatón UAO 2026
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <div class="slide-footer-info">
+            <span>Universidad Autónoma de Occidente</span>
+            <span class="footer-dot"></span>
+            <span>Facultad de Ingeniería y Ciencias Básicas</span>
+          </div>
+          <span>10 / 10 • Fin de la Presentación</span>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- KEYBOARD HINT -->
+  <div class="keyboard-hint">
+    <span>Navegación:</span>
+    <span class="key-badge">←</span>
+    <span class="key-badge">→</span>
+    <span>o</span>
+    <span class="key-badge">Espacio</span>
+  </div>
+
+  <!-- OVERVIEW DRAWER / MODAL -->
+  <div class="overview-backdrop" id="overview-modal" onclick="closeOverview(event)">
+    <div class="overview-modal" onclick="event.stopPropagation()">
+      <div class="overview-header">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 800; color: var(--uao-blue);">Índice de Diapositivas</h3>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Selecciona una diapositiva para saltar directamente a ella.</p>
+        </div>
+        <button class="btn-nav" onclick="toggleOverview()">Cerrar</button>
+      </div>
+      <div class="overview-grid" id="overview-grid">
+        <!-- Generado dinámicamente con JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const totalSlides = 10;
+    let currentSlide = 1;
+
+    const slideTitles = [
+      "Portada: HAS Academic Studio",
+      "La Problemática Docente en el Campus",
+      "La Solución: HAS Automatización",
+      "Recursos H5P del Reto 11 (Faro)",
+      "El Flujo Guiado en 5 Pasos (Wizard)",
+      "Arquitectura Técnica Headless",
+      "Catálogo de 20 Plantillas UAO",
+      "Locución y Accesibilidad DUA",
+      "Métricas de Impacto y Eficiencia",
+      "Enlaces, Cesión Institucional y Cierre"
+    ];
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      document.querySelectorAll('.slide').forEach((slide, i) => {
+        slide.classList.toggle('active', i + 1 === currentSlide);
+      });
+
+      // Actualizar contador
+      const counterEl = document.getElementById('slide-counter');
+      if (counterEl) {
+        counterEl.textContent = (currentSlide < 10 ? '0' : '') + currentSlide + ' / ' + (totalSlides < 10 ? '0' : '') + totalSlides;
+      }
+
+      // Actualizar barra de progreso
+      const progressFill = document.getElementById('progress-fill');
+      if (progressFill) {
+        const percent = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+        progressFill.style.width = Math.max(8, percent) + '%';
+      }
+
+      // Actualizar botones prev/next
+      const btnPrev = document.getElementById('btn-prev');
+      const btnNext = document.getElementById('btn-next');
+      if (btnPrev) btnPrev.disabled = currentSlide === 1;
+      if (btnNext) {
+        if (currentSlide === totalSlides) {
+          btnNext.innerHTML = '<span>Final</span>';
+        } else {
+          btnNext.innerHTML = '<span>Siguiente</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+        }
+      }
+
+      updateOverviewActive();
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        showSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        showSlide(currentSlide - 1);
+      }
+    }
+
+    // Teclado
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        showSlide(1);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        showSlide(totalSlides);
+      } else if (e.key === 'Escape') {
+        const modal = document.getElementById('overview-modal');
+        if (modal && modal.classList.contains('open')) {
+          toggleOverview();
+        }
+      }
+    });
+
+    // Overview modal
+    function toggleOverview() {
+      const modal = document.getElementById('overview-modal');
+      if (!modal) return;
+      modal.classList.toggle('open');
+      if (modal.classList.contains('open')) {
+        renderOverview();
+      }
+    }
+
+    function closeOverview(e) {
+      if (e.target.id === 'overview-modal') {
+        toggleOverview();
+      }
+    }
+
+    function renderOverview() {
+      const grid = document.getElementById('overview-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      for (let i = 1; i <= totalSlides; i++) {
+        const item = document.createElement('div');
+        item.className = 'overview-item' + (i === currentSlide ? ' active' : '');
+        item.innerHTML = `
+          <div class="overview-num">SLIDE ${i < 10 ? '0' : ''}${i}</div>
+          <div class="overview-title">${slideTitles[i - 1]}</div>
+        `;
+        item.onclick = () => {
+          showSlide(i);
+          toggleOverview();
+        };
+        grid.appendChild(item);
+      }
+    }
+
+    function updateOverviewActive() {
+      document.querySelectorAll('.overview-item').forEach((item, idx) => {
+        item.classList.toggle('active', idx + 1 === currentSlide);
+      });
+    }
+
+    // Pantalla completa
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+    }
+
+    // Inicializar
+    showSlide(1);
+  </script>
+</body>
+</html>
