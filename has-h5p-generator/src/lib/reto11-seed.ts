@@ -758,7 +758,7 @@ export const INITIAL_RETO11_PROJECTS: HasProjectSpec[] = [
 export function getSeedProjectRecords(): HasProjectRecord[] {
   return INITIAL_RETO11_PROJECTS.map((spec) => ({
     id: spec.id,
-    user_email: "oswaldo.rodriguez@uao.edu.co",
+    user_email: "",
     title: spec.title,
     course_name: spec.courseName,
     module_name: spec.moduleName,
@@ -768,7 +768,7 @@ export function getSeedProjectRecords(): HasProjectRecord[] {
     ph5p_script: generatePh5pPythonScript(spec),
     moodle_book: generateMoodleBookJson(spec),
     audit_report: spec.auditReport,
-    package_url: `/generated/${spec.id}.h5p`,
+    package_url: `/api/h5p/download?id=${encodeURIComponent(spec.id)}`,
     slides_count: spec.slides.length + (spec.includeNavigationGuide ? 1 : 0),
     interactions_count: spec.slides.filter((s) => Boolean(s.interaction)).length,
     status: "ready",

@@ -18,6 +18,10 @@ const ALLOWED_VOICES: Record<string, string> = {
   "en-GB-RyanNeural": "en-GB-RyanNeural",
 };
 
+export function isAllowedTtsVoice(voice: string): boolean {
+  return Object.prototype.hasOwnProperty.call(ALLOWED_VOICES, voice);
+}
+
 export function cleanTextForTts(rawText: string): string {
   return rawText
     .replace(/```[\s\S]*?```/g, "")

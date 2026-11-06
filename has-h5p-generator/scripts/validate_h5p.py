@@ -9,6 +9,7 @@ import os
 import zipfile
 import json
 import re
+import tempfile
 
 OFFICIAL_H5P_WHITELIST = {
     'json', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tif', 'tiff',
@@ -126,10 +127,9 @@ def validate_h5p(file_path: str) -> bool:
 def main():
     targets = sys.argv[1:]
     if not targets:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
         targets = [
-            os.path.join(script_dir, "../public/generated/matematicas-discretas-act1.h5p"),
-            os.path.join(script_dir, "../public/generated/matematicas-discretas-act0.h5p"),
+            os.path.join(tempfile.gettempdir(), "has-h5p-build", "generated", "matematicas-discretas-act1.h5p"),
+            os.path.join(tempfile.gettempdir(), "has-h5p-build", "generated", "matematicas-discretas-act0.h5p"),
         ]
 
     success = True

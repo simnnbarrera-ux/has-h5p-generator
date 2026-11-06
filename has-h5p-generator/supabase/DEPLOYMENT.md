@@ -1,0 +1,44 @@
+# HAS H5P Generator — despliegue seguro
+
+## Migraciones Supabase
+
+Aplicar en este orden, después de revisar cada SQL en el proyecto de destino:
+
+1. `001_has_h5p_schema.sql`
+2. `002_has_h5p_production_auth_schema.sql`
+3. `003_harden_auth_rls_storage.sql`
+4. `004_atomic_usage_quota.sql`
+5. `005_versioned_private_packages.sql`
+
+La migración 003 restringe tablas y convierte `has-h5p-store` en privado; la 004 reserva cuotas de manera atómica; la 005 agrega `storage_path` sin borrar ni modificar los paquetes existentes.
+
+En una instalación existente, consulta el historial de migraciones y aplica solo las pendientes; no vuelvas a ejecutar migraciones ya aplicadas. La eliminación de perfiles de prueba en 002 afecta instalaciones limpias y no borra perfiles existentes. Si se ejecutó una versión anterior de `scripts/seed-users.js`, revisa y restablece/deshabilita las cuentas de prueba creadas antes de habilitar el servicio públicamente.
+
+## Variables de entorno
+
+Configurar en el entorno del servidor (por ejemplo, Vercel) según `.env.example`:
+
+- `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`: configuración pública de Supabase (publishable/anon).
+- `SUPABASE_SERVICE_ROLE_KEY` (o `SUPABASE_SECRET_KEY`): solo servidor; habilita consultas administrativas y acceso al bucket privado. Nunca usar el prefijo `NEXT_PUBLIC_`.
+- `PREVIEW_TOKEN_SECRET`: secreto aleatorio independiente recomendado, de al menos 32 caracteres; si se omite, el servidor usa la clave privada de Supabase para firmar la cookie temporal.
+- `GROQ_API_KEY` y `GEMINI_API_KEY`: solo servidor para los endpoints de IA.
+- `PH5P_TEMPLATE_PATH`: opcional; ruta local a `plantilla.h5p`. Si se omite, el backend descarga `templates/fiuao-6-215/plantilla.h5p` desde el bucket privado.
+
+No colocar secretos en archivos rastreados ni en variables `NEXT_PUBLIC_*`.
+
+## Plantilla H5P requerida
+
+El compilador necesita el **paquete original de plantilla UAO** usado por los layouts (H5P Course Presentation 1.27), con `h5p.json` y `content/content.json` en la raíz del ZIP y las diapositivas/elementos de plantilla intactos. Los paquetes dentro de `public/preview-h5p/` son demos ya compiladas, no sustituyen esa plantilla base. Cárgala en `has-h5p-store/templates/fiuao-6-215/plantilla.h5p` o define `PH5P_TEMPLATE_PATH` en el servidor. Sin ese artefacto, la aplicación puede arrancar y mostrar demos, pero no compilar proyectos nuevos.
+
+La migración 002 no crea usuarios ni perfiles administrativos por defecto. Los usuarios se crean con Supabase Auth y reciben el rol estándar; cualquier promoción a administrador debe hacerse manualmente y por un operador autorizado.
+
+## Paquetes previos a la privatización
+
+La aplicación nueva escribe objetos versionados bajo `packages/<auth_user_id>/<project_id>/<version>.h5p`. Para instalaciones que conservaban paquetes antiguos en `packages/<project_id>.h5p`:
+
+1. Aplicar 003 y 005.
+2. Definir la URL pública del proyecto y la clave service-role en el entorno local seguro del operador.
+3. Ejecutar `npm run migrate:packages` una vez. El script copia los paquetes a rutas privadas y actualiza `storage_path` únicamente para proyectos listos con propietario; conserva intactos los objetos originales.
+4. Verificar previews y descargas con cuentas autenticadas antes de limpiar manualmente los objetos legacy.
+
+La migración operativa no se ejecuta automáticamente y no borra archivos. Los proyectos sin `auth_user_id` coincidente o sin paquete legacy quedan intactos y se reportan como pendientes.

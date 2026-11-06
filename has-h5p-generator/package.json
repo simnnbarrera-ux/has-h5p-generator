@@ -2,12 +2,15 @@
   "name": "has-h5p-generator",
   "version": "1.0.0",
   "private": true,
-  "description": "HAS H5P Generator — Plataforma de Co-creación de Recursos Educativos Digitales (RED) con IA para el Campus Digital UAO (Digitatón 2026 - Reto 11)",
+  "description": "HAS H5P Generator \u2014 Plataforma de Co-creaci\u00f3n de Recursos Educativos Digitales (RED) con IA para el Campus Digital UAO (Digitat\u00f3n 2026 - Reto 11)",
   "scripts": {
     "dev": "next dev -p 3050",
     "build": "next build --webpack",
     "start": "next start -p 3050",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/lib/*.test.ts",
+    "migrate:packages": "node scripts/migrate-package-storage.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
@@ -18,6 +21,8 @@
     "next": "^16.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "0.0.1",
+    "sharp": "^0.35.5",
     "three": "^0.173.0",
     "ws": "^8.18.0"
   },
@@ -29,8 +34,11 @@
     "@types/three": "^0.173.0",
     "@types/ws": "^8.5.14",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.5",
     "postcss": "^8.5.2",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   }
 }

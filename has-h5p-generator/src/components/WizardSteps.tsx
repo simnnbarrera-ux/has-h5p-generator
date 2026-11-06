@@ -4,7 +4,6 @@ import React, { useState, useRef } from "react";
 import {
   Sparkles,
   Layers,
-  Puzzle,
   Volume2,
   FileCode,
   ShieldCheck,
@@ -20,11 +19,7 @@ import {
   Plus,
   Trash2,
   Type,
-  HelpCircle,
-  Eye,
-  Sliders,
   CheckCircle2,
-  AlertTriangle,
   BookOpen,
 } from "lucide-react";
 import {
@@ -35,20 +30,15 @@ import {
   H5P_PRESENTATION_TEMPLATES,
   getPresentationTemplate,
   findSlideLayout,
-  PresentationTemplateSpec,
-  H5PActivityTypeSpec,
 } from "@/lib/h5p-catalog";
 import {
   HasProjectSpec,
   HasSlideSpec,
-  SlideInteractionSpec,
-  scaleEmSize,
-  resolveFontCssStack,
   generatePh5pPythonScript,
   generateMoodleBookJson,
 } from "@/lib/h5p-engine";
-import { BUILTIN_RETO11_SVGS } from "@/lib/svg-diagrams";
 import TiltCard from "./TiltCard";
+import { apiFetch } from "@/lib/api-client";
 
 interface WizardStepsProps {
   spec: HasProjectSpec;
@@ -56,7 +46,6 @@ interface WizardStepsProps {
   onCompile: (overrideSpec?: HasProjectSpec) => Promise<any>;
   compiling: boolean;
   compilationResult: any;
-  userEmail: string;
 }
 
 export default function WizardSteps({
@@ -65,16 +54,18 @@ export default function WizardSteps({
   onCompile,
   compiling,
   compilationResult,
-  userEmail,
 }: WizardStepsProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [previewAccessLoading, setPreviewAccessLoading] = useState(false);
+  const [previewAccessError, setPreviewAccessError] = useState<string | null>(null);
+  const [previewReady, setPreviewReady] = useState(false);
 
   // Preview key for iframe dynamic reloads
-  const [previewKey, setPreviewKey] = useState<number>(Date.now());
+  const [previewKey, setPreviewKey] = useState<number>(0);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -84,46 +75,59 @@ export default function WizardSteps({
     }, 4500);
   };
 
+  const authorizePreview = async (projectId: string) => {
+    setPreviewReady(false);
+    setPreviewAccessLoading(true);
+    setPreviewAccessError(null);
+
+    try {
+      const response = await apiFetch("/api/h5p/preview-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+      const data: { error?: string } = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "No se pudo autorizar la vista previa.");
+      }
+      setPreviewReady(true);
+    } catch (error: unknown) {
+      setPreviewAccessError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo autorizar la vista previa."
+      );
+    } finally {
+      setPreviewAccessLoading(false);
+    }
+  };
+
   // Dynamic download trigger for .h5p
   const triggerH5pDownload = async (customDownloadUrl?: string) => {
     const filename = `${spec.id}.h5p`;
-    const sameOriginUrl = `/api/h5p/download?id=${encodeURIComponent(spec.id)}&t=${Date.now()}`;
-    const targetUrl = customDownloadUrl || sameOriginUrl;
+    const sameOriginUrl = `/api/h5p/download?id=${encodeURIComponent(spec.id)}`;
+    const targetUrl = customDownloadUrl?.startsWith("/api/h5p/download")
+      ? customDownloadUrl
+      : sameOriginUrl;
 
     try {
-      // 1. Intentar descarga limpia via Blob
-      const res = await fetch(targetUrl);
-      if (res.ok) {
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = filename;
-        link.style.display = "none";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-        return true;
+      const response = await apiFetch(targetUrl, { cache: "no-store" });
+      if (!response.ok) {
+        return false;
       }
-    } catch (err) {
-      console.warn("Fetch de blob falló, usando método nativo de descarga:", err);
-    }
-
-    // 2. Fallback a iframe oculto con endpoint same-origin (fuerza descarga nativa sin recargar página)
-    try {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = sameOriginUrl;
-      document.body.appendChild(iframe);
-      setTimeout(() => {
-        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-      }, 15000);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
       return true;
-    } catch (e) {
-      console.warn("Fallback iframe falló, navegando a descarga:", e);
-      window.location.href = sameOriginUrl;
-      return true;
+    } catch {
+      return false;
     }
   };
 
@@ -134,20 +138,30 @@ export default function WizardSteps({
     if (!compilationResult) {
       const res = await onCompile(spec);
       if (res) {
-        downloadUrl = res.downloadUrl || `/api/h5p/download?id=${spec.id}`;
-        setPreviewKey(Date.now());
+        downloadUrl = res.downloadUrl;
+        setPreviewKey((previous) => previous + 1);
       }
     }
 
-    await triggerH5pDownload(downloadUrl);
-    showToast("¡Paquete .h5p descargado exitosamente! Listo para Moodle UAO");
+    if (!downloadUrl) {
+      showToast("No se pudo obtener la URL de descarga del paquete H5P.");
+      return;
+    }
+
+    const downloaded = await triggerH5pDownload(downloadUrl);
+    showToast(
+      downloaded
+        ? "¡Paquete .h5p descargado exitosamente! Listo para Moodle UAO"
+        : "No se pudo descargar el paquete H5P. Verifica tu sesión e inténtalo de nuevo."
+    );
   };
 
   // Recompilar paquete
   const handleRecompilePackage = async () => {
     const res = await onCompile(spec);
     if (res?.success) {
-      setPreviewKey(Date.now());
+      setPreviewKey((previous) => previous + 1);
+      await authorizePreview(res.project?.id || spec.id);
       showToast("¡Paquete H5P recompilado exitosamente! Vista previa actualizada");
     }
   };
@@ -193,7 +207,8 @@ export default function WizardSteps({
       setCurrentStep(5);
       const res = await onCompile(spec);
       if (res?.success) {
-        setPreviewKey(Date.now());
+        setPreviewKey((previous) => previous + 1);
+        await authorizePreview(res.project?.id || spec.id);
       }
       return;
     }
@@ -278,18 +293,24 @@ export default function WizardSteps({
     setSttLoading(true);
     try {
       const fd = new FormData();
-      fd.append("audio", blob, "dictation.webm");
-      fd.append("userEmail", userEmail);
+      fd.append("file", blob, "dictation.webm");
 
-      const res = await fetch("/api/stt", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.text) {
-        setCopilotPrompt((prev) => (prev ? prev + " " + data.text : data.text));
-      } else if (data.error) {
-        alert("Error en reconocimiento de voz: " + data.error);
+      const res = await apiFetch("/api/stt", { method: "POST", body: fd });
+      const data: { text?: string; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Error en reconocimiento de voz.");
       }
-    } catch (err: any) {
-      alert("Error enviando audio para reconocimiento: " + err.message);
+      if (typeof data.text === "string" && data.text) {
+        const transcript = data.text;
+        setCopilotPrompt((prev) => (prev ? prev + " " + transcript : transcript));
+      }
+    } catch (error: unknown) {
+      alert(
+        "Error enviando audio para reconocimiento: " +
+          (error instanceof Error ? error.message : "Error desconocido")
+      );
     } finally {
       setSttLoading(false);
     }
@@ -306,27 +327,29 @@ export default function WizardSteps({
     setCopilotMessages(newMsgs);
 
     try {
-      const res = await fetch("/api/copilot", {
+      const res = await apiFetch("/api/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          mode: "chat",
           messages: newMsgs,
-          userEmail,
-          currentSpec: spec,
         }),
       });
-      const data = await res.json();
-      if (data.response) {
+      const data: { reply?: string; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Error en el asistente de autoría.");
+      }
+      if (data.reply) {
         setCopilotMessages([
           ...newMsgs,
-          { role: "assistant" as const, content: data.response },
+          { role: "assistant" as const, content: data.reply },
         ]);
-        if (data.suggestedSpec) {
-          setSpec(data.suggestedSpec);
-        }
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch (error: unknown) {
+      console.error("Error en Copilot:", error);
+      showToast(error instanceof Error ? error.message : "No fue posible usar el asistente.");
     } finally {
       setCopilotLoading(false);
     }
@@ -336,13 +359,12 @@ export default function WizardSteps({
   const handleTestVoice = async (voiceId: string) => {
     setPreviewingVoice(voiceId);
     try {
-      const res = await fetch("/api/tts", {
+      const res = await apiFetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: `Hola, soy la voz institucional para tu recurso educativo interactivo en el Campus Digital de la Universidad Autónoma de Occidente.`,
           voice: voiceId,
-          userEmail,
         }),
       });
       if (res.ok) {
@@ -365,30 +387,35 @@ export default function WizardSteps({
     if (!svgPrompt.trim() || svgGenerating) return;
     setSvgGenerating(true);
     try {
-      const res = await fetch("/api/svg-ai", {
+      const res = await apiFetch("/api/svg-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: svgPrompt.trim(), userEmail }),
+        body: JSON.stringify({ topic: svgPrompt.trim() }),
       });
-      const data = await res.json();
-      if (data.svgContent) {
+      const data: {
+        customSvg?: HasSlideSpec["customSvg"];
+        altText?: string;
+        error?: string;
+      } = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Error generando SVG.");
+      }
+      if (data.customSvg) {
         const slide = spec.slides[selectedSlideIndex];
         if (slide) {
           const updated = [...spec.slides];
           updated[selectedSlideIndex] = {
             ...slide,
-            customSvg: {
-              title: slide.titleBlack || "Diagrama Técnico",
-              subtitle: slide.titleAccent || "Generado con IA",
-              highlights: [svgPrompt.trim().slice(0, 70)],
-            },
+            customSvg: data.customSvg,
+            imagePendingDescription: data.altText || slide.imagePendingDescription,
           };
           setSpec({ ...spec, slides: updated });
         }
         setSvgPrompt("");
       }
-    } catch (err) {
-      console.error("Error generando SVG:", err);
+    } catch (error: unknown) {
+      console.error("Error generando SVG:", error);
+      showToast(error instanceof Error ? error.message : "No fue posible generar el diagrama.");
     } finally {
       setSvgGenerating(false);
     }
@@ -566,7 +593,7 @@ export default function WizardSteps({
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#8A1428]/30 focus:border-[#8A1428]"
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
-                  Regla UAO: Si la actividad es 0, se incluye la guía interactiva '¿Cómo navegar?'.
+                  Regla UAO: Si la actividad es 0, se incluye la guía interactiva &apos;¿Cómo navegar?&apos;.
                 </span>
               </div>
             </div>
@@ -1691,14 +1718,28 @@ export default function WizardSteps({
 
             {/* Embedded Live H5P Player */}
             <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-900/5 shadow-inner w-full flex flex-col items-center">
-              <iframe
-                key={previewKey}
-                src={`/preview-viewer/index.html?id=${encodeURIComponent(
-                  spec.id
-                )}&t=${previewKey}`}
-                className="w-full h-[72vh] min-h-[500px] max-h-[740px] border-none"
-                title="Reproductor H5P en vivo"
-              />
+              {previewAccessLoading && (
+                <div className="w-full min-h-[500px] flex items-center justify-center gap-2 text-sm text-slate-500 bg-white">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Autorizando vista previa privada...</span>
+                </div>
+              )}
+              {!previewAccessLoading && previewAccessError && (
+                <div className="w-full min-h-[500px] flex items-center justify-center px-6 text-center text-sm text-red-700 bg-red-50">
+                  {previewAccessError}
+                </div>
+              )}
+              {!previewAccessLoading && !previewAccessError && previewReady && (
+                <iframe
+                  key={previewKey}
+                  src={
+                    compilationResult?.previewPath ||
+                    `/preview-viewer/index.html?id=${encodeURIComponent(spec.id)}`
+                  }
+                  className="w-full h-[72vh] min-h-[500px] max-h-[740px] border-none"
+                  title="Reproductor H5P en vivo"
+                />
+              )}
             </div>
 
             {/* Downloads strip */}

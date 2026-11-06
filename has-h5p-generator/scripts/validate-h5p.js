@@ -5,6 +5,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const JSZip = require("jszip");
 
 const OFFICIAL_H5P_WHITELIST = new Set([
@@ -32,7 +33,6 @@ async function validateH5pPackage(h5pFilePath) {
   const zip = await JSZip.loadAsync(fileBuffer);
 
   const errors = [];
-  const warnings = [];
   const entries = Object.keys(zip.files);
 
   console.log(`Total de entradas en el ZIP: ${entries.length}`);
@@ -177,8 +177,8 @@ async function main() {
   const targets = args.length > 0
     ? args
     : [
-        path.join(__dirname, "../public/generated/matematicas-discretas-act1.h5p"),
-        path.join(__dirname, "../public/generated/matematicas-discretas-act0.h5p"),
+        path.join(os.tmpdir(), "has-h5p-build", "generated", "matematicas-discretas-act1.h5p"),
+        path.join(os.tmpdir(), "has-h5p-build", "generated", "matematicas-discretas-act0.h5p"),
       ];
 
   let allPassed = true;

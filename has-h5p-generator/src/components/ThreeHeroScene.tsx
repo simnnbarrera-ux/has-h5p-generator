@@ -160,7 +160,7 @@ export default function ThreeHeroScene({ className = "" }: { className?: string 
 
     // Animation Loop
     let animId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);

@@ -4,21 +4,10 @@ import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Sparkles,
-  Layers,
-  Puzzle,
-  Volume2,
-  Play,
-  Download,
-  ShieldCheck,
   LogIn,
   LogOut,
   User,
   Type,
-  Plus,
-  ArrowRight,
-  GraduationCap,
-  Loader2,
-  ExternalLink,
 } from "lucide-react";
 import ParticleBackground from "./ParticleBackground";
 import LandingView from "./LandingView";
@@ -28,23 +17,37 @@ import AuthModal from "./AuthModal";
 import H5pPreviewModal from "./H5pPreviewModal";
 import HasLogo from "./HasLogo";
 import { HasProfile, HasProjectRecord, supabasePublic } from "@/lib/supabase";
-import { INITIAL_RETO11_PROJECTS, RETO11_ACT1_SPEC } from "@/lib/reto11-seed";
+import {
+  getSeedProjectRecords,
+  INITIAL_RETO11_PROJECTS,
+  RETO11_ACT1_SPEC,
+} from "@/lib/reto11-seed";
 import { HasProjectSpec, resolveFontCssStack } from "@/lib/h5p-engine";
 import { H5P_FONT_OPTIONS } from "@/lib/h5p-catalog";
+import { apiFetch } from "@/lib/api-client";
+
+const EMPTY_PROFILE: HasProfile = {
+  email: "",
+  full_name: "",
+  faculty: "",
+  program: "",
+  role: "professor",
+  daily_quota: 0,
+  preferred_voice: "es-CO-SalomeNeural",
+};
+
+function getPublicSeedProjects(): HasProjectRecord[] {
+  return getSeedProjectRecords().map((project) => ({
+    ...project,
+    user_email: "",
+  }));
+}
 
 export default function StudioApp() {
   const [activeView, setActiveView] = useState<"landing" | "dashboard" | "wizard">(
     "landing"
   );
-  const [profile, setProfile] = useState<HasProfile>({
-    email: "oswaldo.rodriguez@uao.edu.co",
-    full_name: "Prof. Oswaldo Rodríguez Díaz",
-    faculty: "Facultad de Ingeniería y Ciencias Básicas",
-    program: "Matemáticas Discretas (Reto 11)",
-    role: "professor",
-    daily_quota: 50,
-    preferred_voice: "es-CO-GonzaloNeural",
-  });
+  const [profile, setProfile] = useState<HasProfile>(EMPTY_PROFILE);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -58,6 +61,10 @@ export default function StudioApp() {
   // Compilation state
   const [compiling, setCompiling] = useState(false);
   const [compilationResult, setCompilationResult] = useState<any>(null);
+  const currentSpecSnapshot = JSON.stringify(workingSpec);
+  const activeCompilationResult = compilationResult?.sourceSpecSnapshot === currentSpecSnapshot
+    ? compilationResult
+    : null;
 
   // Preview Modal
   const [previewProject, setPreviewProject] = useState<HasProjectRecord | null>(null);
@@ -65,35 +72,60 @@ export default function StudioApp() {
   const [previewTab, setPreviewTab] = useState<"player" | "python" | "moodle">(
     "player"
   );
+  const [previewIsPublicDemo, setPreviewIsPublicDemo] = useState(false);
 
-  // Load profile and projects on mount
+  const refreshAuthenticatedProjects = async () => {
+    const response = await apiFetch("/api/projects");
+    const data: {
+      profile?: HasProfile;
+      projects?: HasProjectRecord[];
+      error?: string;
+    } = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "No se pudieron cargar los proyectos.");
+    }
+
+    if (!data.profile) {
+      throw new Error("La respuesta no contiene un perfil autenticado.");
+    }
+
+    setProfile(data.profile);
+    setProjects(Array.isArray(data.projects) ? data.projects : []);
+  };
+
+  // El cliente anónimo solo usa seeds locales; los proyectos privados requieren sesión.
   useEffect(() => {
-    async function loadInitial() {
-      try {
-        setLoadingProjects(true);
-        // Check active Supabase session
-        const { data: sessionData } = await supabasePublic.auth.getSession();
-        if (sessionData?.session?.user) {
-          setIsAuthenticated(true);
-        }
+    let cancelled = false;
 
-        const email =
-          sessionData?.session?.user?.email || "oswaldo.rodriguez@uao.edu.co";
-        const res = await fetch(`/api/projects?email=${encodeURIComponent(email)}`);
-        const json = await res.json();
-        if (json.profile) {
-          setProfile(json.profile);
+    async function loadInitial() {
+      setLoadingProjects(true);
+      try {
+        const { data: sessionData } = await supabasePublic.auth.getSession();
+        if (sessionData.session?.user) {
+          await refreshAuthenticatedProjects();
+          if (!cancelled) setIsAuthenticated(true);
+        } else if (!cancelled) {
+          setProfile(EMPTY_PROFILE);
+          setProjects(getPublicSeedProjects());
+          setIsAuthenticated(false);
         }
-        if (json.projects && json.projects.length > 0) {
-          setProjects(json.projects);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error cargando proyectos autenticados:", error);
+          setProfile(EMPTY_PROFILE);
+          setProjects(getPublicSeedProjects());
+          setIsAuthenticated(false);
         }
-      } catch (err) {
-        console.error("Error cargando proyectos iniciales:", err);
       } finally {
-        setLoadingProjects(false);
+        if (!cancelled) setLoadingProjects(false);
       }
     }
+
     loadInitial();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Update dynamic font styling on body or wrapper
@@ -114,19 +146,22 @@ export default function StudioApp() {
   // Open project in Preview modal
   const handleOpenPreviewModal = (
     projectId: string,
-    tab: "player" | "python" | "moodle" = "player"
+    tab: "player" | "python" | "moodle" = "player",
+    isPublicDemo = false
   ) => {
     const found = projects.find((p) => p.id === projectId);
     if (found) {
       setPreviewProject(found);
       setPreviewTab(tab);
+      setPreviewIsPublicDemo(isPublicDemo);
       setPreviewModalOpen(true);
+      return;
     } else {
       const seed = INITIAL_RETO11_PROJECTS.find((p) => p.id === projectId);
       if (seed) {
         setPreviewProject({
           id: seed.id,
-          user_email: profile.email,
+          user_email: "",
           title: seed.title,
           course_name: seed.courseName,
           module_name: seed.moduleName,
@@ -140,6 +175,7 @@ export default function StudioApp() {
           updated_at: new Date().toISOString(),
         });
         setPreviewTab(tab);
+        setPreviewIsPublicDemo(isPublicDemo);
         setPreviewModalOpen(true);
       }
     }
@@ -152,31 +188,33 @@ export default function StudioApp() {
     setCompiling(true);
     const targetSpec = overrideSpec || workingSpec;
     try {
-      const res = await fetch("/api/h5p/build", {
+      const res = await apiFetch("/api/h5p/build", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           spec: targetSpec,
-          userEmail: profile.email,
           synthesizeAudio: true,
         }),
       });
-      const data = await res.json();
+      const data: { success?: boolean; error?: string } & Record<string, any> =
+        await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Error desconocido al compilar.");
+      }
       if (data.success) {
-        setCompilationResult(data);
-        // Refresh projects list
-        const pRes = await fetch(
-          `/api/projects?email=${encodeURIComponent(profile.email)}`
-        );
-        const pJson = await pRes.json();
-        if (pJson.projects) setProjects(pJson.projects);
+        const normalizedSpec = data.project?.project_spec || targetSpec;
+        setWorkingSpec(normalizedSpec);
+        setCompilationResult({ ...data, sourceSpecSnapshot: JSON.stringify(normalizedSpec) });
+        await refreshAuthenticatedProjects();
         return data;
       } else {
-        alert("Error compilando: " + (data.error || "Error desconocido"));
-        return null;
+        throw new Error(data.error || "Error desconocido al compilar.");
       }
-    } catch (err: any) {
-      alert("Error en la solicitud de compilación: " + err.message);
+    } catch (error: unknown) {
+      alert(
+        "Error en la solicitud de compilación: " +
+          (error instanceof Error ? error.message : "Error desconocido")
+      );
       return null;
     } finally {
       setCompiling(false);
@@ -187,15 +225,9 @@ export default function StudioApp() {
   const handleLogout = async () => {
     await supabasePublic.auth.signOut();
     setIsAuthenticated(false);
-    setProfile({
-      email: "oswaldo.rodriguez@uao.edu.co",
-      full_name: "Prof. Oswaldo Rodríguez Díaz",
-      faculty: "Facultad de Ingeniería y Ciencias Básicas",
-      program: "Matemáticas Discretas (Reto 11)",
-      role: "professor",
-      daily_quota: 50,
-      preferred_voice: "es-CO-GonzaloNeural",
-    });
+    setProfile(EMPTY_PROFILE);
+    setProjects(getPublicSeedProjects());
+    setCompilationResult(null);
     setActiveView("landing");
   };
 
@@ -382,17 +414,17 @@ export default function StudioApp() {
                 handleOpenProjectInWizard(id);
               }
             }}
-            onPreviewDemo={(id) => handleOpenPreviewModal(id, "player")}
+            onPreviewDemo={(id) => handleOpenPreviewModal(id, "player", true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             userEmail={isAuthenticated ? profile.email : undefined}
-            sampleProjects={projects}
           />
         )}
 
         {activeView === "dashboard" && (
           <DashboardView
-            projects={projects}
-            profile={profile}
+              projects={projects}
+              profile={profile}
+              isLoading={loadingProjects}
             onOpenProject={(id) => handleOpenProjectInWizard(id)}
             onNewProject={() => {
               setWorkingSpec({
@@ -432,8 +464,7 @@ export default function StudioApp() {
             setSpec={setWorkingSpec}
             onCompile={handleCompilePackage}
             compiling={compiling}
-            compilationResult={compilationResult}
-            userEmail={profile.email}
+            compilationResult={activeCompilationResult}
           />
         )}
       </main>
@@ -477,6 +508,10 @@ export default function StudioApp() {
         onAuthSuccess={(newProf) => {
           setProfile(newProf);
           setIsAuthenticated(true);
+          setProjects([]);
+          void refreshAuthenticatedProjects().catch(() => {
+            setProjects([]);
+          });
         }}
       />
 
@@ -486,6 +521,7 @@ export default function StudioApp() {
         onClose={() => setPreviewModalOpen(false)}
         project={previewProject}
         initialTab={previewTab}
+        isPublicDemo={previewIsPublicDemo}
       />
     </div>
   );

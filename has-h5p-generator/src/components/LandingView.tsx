@@ -11,17 +11,13 @@ import {
   ArrowRight,
   Play,
   Cpu,
-  BookOpen,
   Binary,
   GraduationCap,
-  ExternalLink,
   ChevronRight,
-  Compass,
 } from "lucide-react";
 import ThreeHeroScene from "./ThreeHeroScene";
 import TiltCard from "./TiltCard";
 import HasLogo from "./HasLogo";
-import { HasProjectRecord } from "@/lib/supabase";
 
 interface LandingViewProps {
   onStartWizard: () => void;
@@ -29,7 +25,6 @@ interface LandingViewProps {
   onPreviewDemo?: (projectId: string) => void;
   onOpenAuth: () => void;
   userEmail?: string;
-  sampleProjects: HasProjectRecord[];
 }
 
 export default function LandingView({
@@ -38,15 +33,7 @@ export default function LandingView({
   onPreviewDemo,
   onOpenAuth,
   userEmail,
-  sampleProjects,
 }: LandingViewProps) {
-  const reto11Act1 = sampleProjects.find(
-    (p) => p.id === "matematicas-discretas-act1"
-  );
-  const reto11Act0 = sampleProjects.find(
-    (p) => p.id === "matematicas-discretas-act0"
-  );
-
   return (
     <div className="space-y-16 pb-12">
       {/* 1. Hero Section */}
@@ -232,7 +219,7 @@ export default function LandingView({
                     Bienvenida y Trayectoria: Matemáticas Discretas
                   </h3>
                   <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                    Inducción formativa con Slide 1 '¿Cómo navegar?' (exclusivo Actividad 0),
+                    Inducción formativa con Slide 1 &apos;¿Cómo navegar?&apos; (exclusivo Actividad 0),
                     diagnóstico interactivo y locución docente institucional.
                   </p>
                 </div>

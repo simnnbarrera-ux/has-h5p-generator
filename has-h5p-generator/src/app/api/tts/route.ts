@@ -1,69 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import { synthesizeEdgeTtsMp3 } from "@/lib/tts-server";
-import { checkAndLogRateLimit } from "@/lib/supabase";
+import { synthesizeEdgeTtsMp3, isAllowedTtsVoice } from "@/lib/tts-server";
+import { getRequestUser, getTrustedClientIp } from "@/lib/api-auth";
+import { checkAndLogRateLimit, getOrCreateProfile } from "@/lib/supabase-server";
+import { ProjectValidationError, readBoundedJson } from "@/lib/project-validation";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
+  const user = await getRequestUser(req);
+  if (!user) return NextResponse.json({ error: "Inicia sesión para generar audio." }, { status: 401 });
   try {
-    const body = await req.json();
-    const {
-      text,
-      voice = "es-CO-SalomeNeural",
-      rate = "+0%",
-      userEmail = "oswaldo.rodriguez@uao.edu.co",
-    } = body;
-
-    if (!text || typeof text !== "string") {
-      return NextResponse.json(
-        { error: "El campo 'text' es obligatorio para generar el audio." },
-        { status: 400 }
-      );
+    const body = await readBoundedJson<Record<string, unknown>>(req, 16_384);
+    const text = typeof body.text === "string" ? body.text.trim() : "";
+    const voice = typeof body.voice === "string" ? body.voice : "es-CO-SalomeNeural";
+    const rate = typeof body.rate === "string" ? body.rate : "+0%";
+    if (!text || text.length > 1_800) {
+      return NextResponse.json({ error: "El texto debe tener entre 1 y 1.800 caracteres." }, { status: 400 });
+    }
+    if (!isAllowedTtsVoice(voice)) {
+      return NextResponse.json({ error: "La voz seleccionada no está disponible." }, { status: 400 });
+    }
+    const rateMatch = /^([+-])(\d{1,2})%$/.exec(rate);
+    if (!rateMatch || Number(rateMatch[2]) > 20) {
+      return NextResponse.json({ error: "La velocidad debe estar entre -20% y +20%." }, { status: 400 });
     }
 
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
-    const rateCheck = await checkAndLogRateLimit({
-      userEmail,
-      ipAddress: ip,
+    const profile = await getOrCreateProfile(user);
+    const quota = await checkAndLogRateLimit({
+      userId: user.id,
+      userEmail: profile.email,
+      ipAddress: getTrustedClientIp(req),
       actionType: "tts_audio",
       modelUsed: `institutional-voice:${voice}`,
       tokensEstimated: Math.ceil(text.length / 4),
     });
-
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        { error: rateCheck.reason || "Límite de peticiones excedido." },
-        { status: 429 }
-      );
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quota.reason || "Límite de peticiones excedido.", ...quota }, { status: 429 });
     }
 
-    const { buffer, voiceId } = await synthesizeEdgeTtsMp3(
-      text,
-      voice,
-      rate
-    );
-
-    return new NextResponse(new Uint8Array(buffer), {
+    const result = await synthesizeEdgeTtsMp3(text, voice, rate);
+    return new NextResponse(new Uint8Array(result.buffer), {
       status: 200,
       headers: {
         "Content-Type": "audio/mpeg",
-        "Content-Length": String(buffer.length),
-        "X-Voice-Used": voiceId,
-        "X-TTS-Engine": "institutional-voice",
-        "X-Quota-Remaining": String(rateCheck.remainingToday),
-        "Cache-Control": "public, max-age=3600",
+        "Content-Length": String(result.buffer.length),
+        "X-Voice-Used": result.voiceId,
+        "X-Quota-Remaining": String(quota.remainingToday),
+        "Cache-Control": "private, no-store",
       },
     });
-  } catch (err: any) {
-    console.error("[/api/tts Error]", err);
-    return NextResponse.json(
-      {
-        error: "No se pudo sintetizar el audio institucional.",
-        details: err?.message || String(err),
-      },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("[/api/tts]", error);
+    return error instanceof ProjectValidationError
+      ? NextResponse.json({ error: error.message }, { status: 400 })
+      : NextResponse.json({ error: "No fue posible sintetizar el audio." }, { status: 503 });
   }
 }

@@ -9,23 +9,22 @@ import {
   FileCode,
   BookOpen,
   Search,
-  Filter,
   Layers,
   Puzzle,
   Volume2,
   Calendar,
-  Sparkles,
-  ExternalLink,
   GraduationCap,
-  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import TiltCard from "./TiltCard";
 import { HasProjectRecord, HasProfile } from "@/lib/supabase";
 import { getPresentationTemplate } from "@/lib/h5p-catalog";
+import { apiFetch } from "@/lib/api-client";
 
 interface DashboardViewProps {
   projects: HasProjectRecord[];
   profile: HasProfile;
+  isLoading: boolean;
   onOpenProject: (projectId: string) => void;
   onNewProject: () => void;
   onPreviewProject: (projectId: string) => void;
@@ -36,6 +35,7 @@ interface DashboardViewProps {
 export default function DashboardView({
   projects,
   profile,
+  isLoading,
   onOpenProject,
   onNewProject,
   onPreviewProject,
@@ -44,6 +44,42 @@ export default function DashboardView({
 }: DashboardViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "reto11" | "custom">("all");
+  const [downloadingProjectId, setDownloadingProjectId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const handleDownloadH5p = async (projectId: string) => {
+    setDownloadingProjectId(projectId);
+    setDownloadError(null);
+
+    try {
+      const response = await apiFetch(
+        `/api/h5p/download?id=${encodeURIComponent(projectId)}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) {
+        throw new Error("El servidor no autorizó la descarga del paquete H5P.");
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${projectId}.h5p`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (error: unknown) {
+      setDownloadError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo descargar el paquete H5P."
+      );
+    } finally {
+      setDownloadingProjectId(null);
+    }
+  };
 
   const filteredProjects = projects.filter((p) => {
     const matchesSearch =
@@ -202,6 +238,12 @@ export default function DashboardView({
         </div>
       </section>
 
+      {downloadError && (
+        <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          {downloadError}
+        </p>
+      )}
+
       {/* 3. Projects Grid */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map((project) => {
@@ -305,14 +347,19 @@ export default function DashboardView({
 
                 {/* Secondary Exports */}
                 <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 flex-wrap gap-2">
-                  <a
-                    href={project.package_url || `/generated/${project.id}.h5p`}
-                    download={`${project.id}.h5p`}
-                    className="hover:text-[#8A1428] font-medium flex items-center gap-1"
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadH5p(project.id)}
+                    disabled={downloadingProjectId === project.id}
+                    className="hover:text-[#8A1428] font-medium flex items-center gap-1 disabled:opacity-50"
                   >
                     <Download className="w-3 h-3" />
-                    <span>Descargar .h5p</span>
-                  </a>
+                    <span>
+                      {downloadingProjectId === project.id
+                        ? "Descargando..."
+                        : "Descargar .h5p"}
+                    </span>
+                  </button>
 
                   <button
                     type="button"
@@ -338,7 +385,12 @@ export default function DashboardView({
         })}
       </section>
 
-      {filteredProjects.length === 0 && (
+      {isLoading ? (
+        <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Cargando tus proyectos…
+        </div>
+      ) : filteredProjects.length === 0 && (
         <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
             <Search className="w-6 h-6" />

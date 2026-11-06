@@ -9,10 +9,8 @@ import JSZip from "jszip";
 import {
   UAO_TEMPLATE_COLORS,
   H5P_FONT_OPTIONS,
-  H5P_PRESENTATION_TEMPLATES,
   getPresentationTemplate,
   findSlideLayout,
-  PresentationTemplateSpec,
 } from "./h5p-catalog";
 import {
   BUILTIN_RETO11_SVGS,
@@ -147,9 +145,7 @@ export interface HasProjectSpec {
 }
 
 const NEGRO = UAO_TEMPLATE_COLORS.texto;
-const BLANCO = UAO_TEMPLATE_COLORS.texto_sobre_color;
 const AZUL = UAO_TEMPLATE_COLORS.acento;
-const GRANATE = UAO_TEMPLATE_COLORS.principal;
 const FONDO = UAO_TEMPLATE_COLORS.fondo_suave;
 const NARANJA = UAO_TEMPLATE_COLORS.pendiente;
 
@@ -177,7 +173,9 @@ export function escHtml(t: string): string {
   return (t || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export function htmlTitulo(
@@ -268,13 +266,7 @@ export function htmlLista(
   fontStack = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif"
 ): string {
   const lis = items
-    .map((item) =>
-      item.startsWith("<")
-        ? `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};">${item}</li>`
-        : `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};"><span style="font-size:${tam};color:${NEGRO};font-family:${fontStack};">${escHtml(
-            item
-          )}</span></li>`
-    )
+    .map((item) => `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};"><span style="font-size:${tam};color:${NEGRO};font-family:${fontStack};">${escHtml(item)}</span></li>`)
     .join("");
   return `<ul style="margin:0;padding-left:1.2em;">${lis}</ul>`;
 }
@@ -288,29 +280,18 @@ export function htmlEnlace(
 ): string {
   const isUrlInLabel = label.startsWith("http://") || label.startsWith("https://");
   const linkText = isUrlInLabel ? label : `${label} [Enlace institucional]`;
+  let safeUrl = "#";
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol === "https:" || parsed.protocol === "http:") && !parsed.username && !parsed.password) {
+      safeUrl = parsed.toString();
+    }
+  } catch {}
   return `<a href="${escHtml(
-    url
+    safeUrl
   )}" target="_blank" rel="noopener noreferrer" style="font-size:${tam};color:${colorAcento};font-family:${fontStack};text-decoration:underline;font-weight:600;">${escHtml(
     linkText
   )}</a>`;
-}
-
-function getTemplateExtractedDir(fs: any, path: any): string {
-  const ph5pRoot =
-    process.env.PH5P_ROOT_DIR ||
-    path.resolve(process.cwd(), "..", "ph5p");
-  const extracted = path.join(
-    ph5pRoot,
-    "trabajo",
-    "plantillas",
-    "fiuao-6-215"
-  );
-  if (fs.existsSync(path.join(extracted, "content", "content.json"))) {
-    return extracted;
-  }
-  throw new Error(
-    `No se encontró la plantilla extraída en ${extracted}. Ejecuta la extracción primero.`
-  );
 }
 
 function assignNewSubContentIds(obj: any): void {
@@ -335,7 +316,16 @@ function collectUsedFiles(obj: any, acc = new Set<string>()): Set<string> {
       !obj.path.startsWith("http://") &&
       !obj.path.startsWith("https://")
     ) {
-      acc.add(obj.path.replace(/\\/g, "/"));
+      const normalized: string = obj.path.replace(/\\/g, "/");
+      const segments: string[] = normalized.split("/");
+      if (
+        normalized.startsWith("/") ||
+        segments.some((segment) => segment === ".." || segment === "." || segment.length === 0) ||
+        normalized.includes("\u0000")
+      ) {
+        throw new Error("La plantilla o el recurso contiene una ruta de archivo no permitida.");
+      }
+      acc.add(normalized);
     }
     for (const val of Object.values(obj)) {
       collectUsedFiles(val, acc);
@@ -1271,7 +1261,6 @@ function compileSlideFromSpec(
   const colorAccent = tmpl.colors.accent;
   const colorBackground = tmpl.colors.background;
   const colorCardBg = tmpl.colors.cardBg;
-  const colorCardBorder = tmpl.colors.cardBorder;
   const colorTextPrimary = tmpl.colors.textPrimary;
   const colorTextMuted = tmpl.colors.textMuted;
   const colorHighlightBg = tmpl.colors.highlightBg;
@@ -1942,15 +1931,19 @@ function compileSlideFromSpec(
         slideSpec.subtitle || "Fuentes de estudio"
       )}</strong></span></p>`;
 
-      const listItems: string[] = [];
+      const listItemsHtml: string[] = [];
       if (slideSpec.links?.length) {
         for (const l of slideSpec.links) {
-          listItems.push(htmlEnlace(l.label, l.url, sz("0.82em"), fontStack, colorAccent));
+          listItemsHtml.push(
+            `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};">${htmlEnlace(l.label, l.url, sz("0.82em"), fontStack, colorAccent)}</li>`
+          );
         }
       }
       if (slideSpec.bullets?.length) {
         for (const b of slideSpec.bullets) {
-          listItems.push(b);
+          listItemsHtml.push(
+            `<li style="margin-bottom:0.3em;line-height:1.3;font-family:${fontStack};"><span style="font-size:${sz("0.82em")};color:${NEGRO};font-family:${fontStack};">${escHtml(b)}</span></li>`
+          );
         }
       }
 
@@ -1960,12 +1953,8 @@ function compileSlideFromSpec(
         colorTextPrimary,
         fontStack
       );
-      if (listItems.length) {
-        contentHtml += `<div style="margin-top:12px;">${htmlLista(
-          listItems,
-          sz("0.82em"),
-          fontStack
-        )}</div>`;
+      if (listItemsHtml.length) {
+        contentHtml += `<div style="margin-top:12px;"><ul style="margin:0;padding-left:1.2em;">${listItemsHtml.join("")}</ul></div>`;
       }
       if (slideSpec.highlightBox) {
         contentHtml += `<div style="margin-top:12px;">${htmlParrafos(
@@ -2488,7 +2477,8 @@ export function generateMoodleBookJson(spec: HasProjectSpec): any {
 
 export async function buildH5pPackageFromSpec(
   spec: HasProjectSpec,
-  audioAssets: Map<string, Buffer> = new Map()
+  audioAssets: Map<string, Buffer> = new Map(),
+  suppliedTemplateBuffer?: Buffer
 ): Promise<{
   h5pBuffer: Buffer;
   previewPath: string;
@@ -2501,6 +2491,10 @@ export async function buildH5pPackageFromSpec(
   const fs = await import("fs");
   const path = await import("path");
   const os = await import("os");
+
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/.test(spec.id)) {
+    throw new Error("El identificador del proyecto contiene caracteres no permitidos.");
+  }
 
   // 1. Obtener plantilla.h5p desde disco local o desde Supabase Storage (con caché en /tmp para Vercel Serverless)
   const ph5pRoot =
@@ -2515,32 +2509,32 @@ export async function buildH5pPackageFromSpec(
   const tmpZipPath = path.join(os.tmpdir(), "fiuao-6-215-plantilla.h5p");
 
   let baseZipBuf: Buffer;
-  if (fs.existsSync(localZipPath)) {
+  if (suppliedTemplateBuffer?.length) {
+    baseZipBuf = Buffer.from(suppliedTemplateBuffer);
+  } else if (fs.existsSync(localZipPath)) {
     baseZipBuf = fs.readFileSync(localZipPath);
   } else if (fs.existsSync(tmpZipPath)) {
     baseZipBuf = fs.readFileSync(tmpZipPath);
   } else {
-    const cloudTemplateUrl =
-      "https://jpwpuesdjrezlmpfjymt.supabase.co/storage/v1/object/public/has-h5p-store/templates/fiuao-6-215/plantilla.h5p";
-    const res = await fetch(cloudTemplateUrl);
-    if (!res.ok) {
-      throw new Error(
-        `No se pudo descargar plantilla.h5p desde Supabase Storage (${res.status})`
-      );
-    }
-    baseZipBuf = Buffer.from(await res.arrayBuffer());
-    try {
-      fs.writeFileSync(tmpZipPath, baseZipBuf);
-    } catch {}
+    throw new Error(
+      "No se encontró la plantilla H5P. Cárgala desde el servidor o define PH5P_TEMPLATE_PATH."
+    );
   }
 
   const zip = await JSZip.loadAsync(baseZipBuf);
-  const templateContentRaw = await zip
-    .file("content/content.json")!
-    .async("string");
-  const templateH5pRaw = await zip.file("h5p.json")!.async("string");
+  const templateContentEntry = zip.file("content/content.json");
+  const templateManifestEntry = zip.file("h5p.json");
+  if (!templateContentEntry || !templateManifestEntry) {
+    throw new Error("La plantilla H5P debe incluir h5p.json y content/content.json en la raíz del ZIP.");
+  }
+  const templateContentRaw = await templateContentEntry.async("string");
+  const templateH5pRaw = await templateManifestEntry.async("string");
   const templateContent = JSON.parse(templateContentRaw);
   const templateH5pJson = JSON.parse(templateH5pRaw);
+  const templateSlides = templateContent?.presentation?.slides;
+  if (!Array.isArray(templateSlides) || templateSlides.length === 0) {
+    throw new Error("content/content.json debe incluir presentation.slides con al menos una diapositiva.");
+  }
 
   const generatedSvgs = new Map<string, GeneratedSvgAsset>();
   const extraLibsNeeded = new Set<string>();
@@ -2563,17 +2557,24 @@ export async function buildH5pPackageFromSpec(
 
   const templateConfig = getPresentationTemplate(spec.templateId);
 
-  const compiledSlides = slidesToCompile.map((s) =>
-    compileSlideFromSpec(
-      templateContent.presentation.slides,
-      s,
-      generatedSvgs,
-      extraLibsNeeded,
-      spec.fontFamily || templateConfig.recommendedFont,
-      spec.globalFontScale,
-      spec.templateId
-    )
-  );
+  const compiledSlides = slidesToCompile.map((s, index) => {
+    try {
+      return compileSlideFromSpec(
+        templateSlides,
+        s,
+        generatedSvgs,
+        extraLibsNeeded,
+        spec.fontFamily || templateConfig.recommendedFont,
+        spec.globalFontScale,
+        spec.templateId
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "error desconocido";
+      throw new Error(
+        `No se pudo compilar la diapositiva ${index + 1} (layout ${s.templateSlide}); revisa que la plantilla base incluya los elementos del layout. ${detail}`
+      );
+    }
+  });
 
   // Resolver enlaces internos goToSlide por clave -> índice 1-based
   const keyMap = new Map<string, number>();
@@ -2646,63 +2647,8 @@ export async function buildH5pPackageFromSpec(
   zip.file("h5p.json", JSON.stringify(finalH5pJson, null, 2));
   zip.file("content/content.json", JSON.stringify(finalContent));
 
-  // Escribir vista previa tanto en /tmp/preview-h5p (para Vercel Serverless) como en public/preview-h5p (si es escribible)
-  const tmpPreviewDir = path.join(os.tmpdir(), "preview-h5p", spec.id);
-  const publicPreviewDir = path.join(
-    process.cwd(),
-    "public",
-    "preview-h5p",
-    spec.id
-  );
-  const publicGeneratedDir = path.join(process.cwd(), "public", "generated");
-  const targetPreviewDirs: string[] = [];
-
-  try {
-    fs.mkdirSync(path.join(tmpPreviewDir, "content", "images"), {
-      recursive: true,
-    });
-    fs.mkdirSync(path.join(tmpPreviewDir, "content", "audios"), {
-      recursive: true,
-    });
-    fs.writeFileSync(
-      path.join(tmpPreviewDir, "h5p.json"),
-      JSON.stringify(finalH5pJson, null, 2),
-      "utf-8"
-    );
-    fs.writeFileSync(
-      path.join(tmpPreviewDir, "content", "content.json"),
-      JSON.stringify(finalContent),
-      "utf-8"
-    );
-    targetPreviewDirs.push(tmpPreviewDir);
-  } catch {}
-
-  let canWritePublic = false;
-  try {
-    fs.mkdirSync(path.join(publicPreviewDir, "content", "images"), {
-      recursive: true,
-    });
-    fs.mkdirSync(path.join(publicPreviewDir, "content", "audios"), {
-      recursive: true,
-    });
-    fs.mkdirSync(publicGeneratedDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(publicPreviewDir, "h5p.json"),
-      JSON.stringify(finalH5pJson, null, 2),
-      "utf-8"
-    );
-    fs.writeFileSync(
-      path.join(publicPreviewDir, "content", "content.json"),
-      JSON.stringify(finalContent),
-      "utf-8"
-    );
-    targetPreviewDirs.push(publicPreviewDir);
-    canWritePublic = true;
-  } catch {
-    // En Vercel Serverless (/var/task es read-only), se sirve desde /tmp y Supabase Storage
-  }
-
   const sharp = eval("require")("sharp");
+
 
   // Inyectar imágenes rasterizadas PNG de alta resolución, audios MP3 y archivos nativos de la plantilla
   for (const relPath of usedFiles) {
@@ -2720,51 +2666,13 @@ export async function buildH5pPackageFromSpec(
       // Garantizar que la ruta dentro del zip use extensión .png
       const targetRelPath = relPath.replace(/\.svg$/i, ".png");
       zip.file(`content/${targetRelPath}`, pngBuffer);
-      for (const dir of targetPreviewDirs) {
-        try {
-          const dst = path.join(dir, "content", targetRelPath);
-          fs.mkdirSync(path.dirname(dst), { recursive: true });
-          fs.writeFileSync(dst, pngBuffer);
-        } catch {}
-      }
     } else if (audioAssets.has(relPath)) {
       const buf = audioAssets.get(relPath)!;
       zip.file(`content/${relPath}`, buf);
-      for (const dir of targetPreviewDirs) {
-        try {
-          const dst = path.join(dir, "content", relPath);
-          fs.mkdirSync(path.dirname(dst), { recursive: true });
-          fs.writeFileSync(dst, buf);
-        } catch {}
-      }
     } else if (preservedTemplateFiles.has(relPath)) {
       const buf = preservedTemplateFiles.get(relPath)!;
       zip.file(`content/${relPath}`, buf);
-      for (const dir of targetPreviewDirs) {
-        try {
-          const dst = path.join(dir, "content", relPath);
-          fs.mkdirSync(path.dirname(dst), { recursive: true });
-          fs.writeFileSync(dst, buf);
-        } catch {}
-      }
     }
-  }
-
-  // Limpiar cualquier archivo SVG residual en los directorios de vista previa
-  for (const dir of targetPreviewDirs) {
-    try {
-      const imgDir = path.join(dir, "content", "images");
-      if (fs.existsSync(imgDir)) {
-        const dirFiles = fs.readdirSync(imgDir);
-        for (const f of dirFiles) {
-          if (f.toLowerCase().endsWith(".svg")) {
-            try {
-              fs.unlinkSync(path.join(imgDir, f));
-            } catch {}
-          }
-        }
-      }
-    } catch {}
   }
 
   // -----------------------------------------------------------------------------
@@ -2793,13 +2701,6 @@ export async function buildH5pPackageFromSpec(
     compressionOptions: { level: 3 },
   });
 
-  if (canWritePublic) {
-    try {
-      const outputH5pPath = path.join(publicGeneratedDir, `${spec.id}.h5p`);
-      fs.writeFileSync(outputH5pPath, h5pBuffer);
-    } catch {}
-  }
-
   try {
     fs.writeFileSync(path.join(os.tmpdir(), `${spec.id}.h5p`), h5pBuffer);
   } catch {}
@@ -2811,7 +2712,7 @@ export async function buildH5pPackageFromSpec(
   return {
     h5pBuffer,
     previewPath: `/api/h5p-preview/${spec.id}`,
-    downloadUrl: `/generated/${spec.id}.h5p`,
+    downloadUrl: `/api/h5p/download?id=${encodeURIComponent(spec.id)}`,
     slidesCount: compiledSlides.length,
     interactionsCount,
     ph5pScript,

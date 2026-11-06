@@ -1,100 +1,48 @@
+#!/usr/bin/env node
+"use strict";
+
 const { createClient } = require("@supabase/supabase-js");
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://jpwpuesdjrezlmpfjymt.supabase.co";
-const SUPABASE_SECRET_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-const admin = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-
-const DEFAULT_USERS = [
-  {
-    email: "simon.barrera@uao.edu.co",
-    password: "UAO2026!EQ36",
-    fullName: "Simón Barrera Ruíz",
-    role: "admin",
-    program: "Ingeniería Mecatrónica (EQ-36)",
-  },
-  {
-    email: "hermaioni.delgado@uao.edu.co",
-    password: "UAO2026!EQ36",
-    fullName: "Hermaioni Delgado Paz",
-    role: "admin",
-    program: "Ingeniería Mecatrónica (EQ-36)",
-  },
-  {
-    email: "alex.silva@uao.edu.co",
-    password: "UAO2026!EQ36",
-    fullName: "Alex Yohan Silva Mina",
-    role: "admin",
-    program: "Ingeniería Informática (EQ-36)",
-  },
-  {
-    email: "demo.docente@uao.edu.co",
-    password: "UAO2026!EQ36",
-    fullName: "Docente Invitado Demo",
-    role: "professor",
-    program: "Campus Digital UAO",
-  },
-  {
-    email: "oswaldo.rodriguez@uao.edu.co",
-    password: "UAO2026!EQ36",
-    fullName: "Prof. Oswaldo Rodríguez Díaz",
-    role: "professor",
-    program: "Matemáticas Discretas (Reto 11)",
-  },
-];
-
-async function seed() {
-  console.log("=== Creando / Verificando Cuentas en Supabase Auth ===");
-  const { data: listData } = await admin.auth.admin.listUsers();
-  const existingEmails = new Set(listData?.users?.map((u) => u.email?.toLowerCase()));
-
-  for (const u of DEFAULT_USERS) {
-    if (existingEmails.has(u.email.toLowerCase())) {
-      console.log(`[EXISTE] ${u.email}`);
-    } else {
-      const { data, error } = await admin.auth.admin.createUser({
-        email: u.email,
-        password: u.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: u.fullName,
-          role: u.role,
-          faculty: "Facultad de Ingeniería y Ciencias Básicas",
-          program: u.program,
-        },
-      });
-      if (error) {
-        console.error(`[ERROR] ${u.email}:`, error.message);
-      } else {
-        console.log(`[CREADO] ${u.email} (ID: ${data.user.id})`);
-      }
-    }
+async function main() {
+  if (process.env.ALLOW_DEMO_USER_SEED !== "1") {
+    throw new Error("Seeder desactivado. Usa ALLOW_DEMO_USER_SEED=1 solo en un proyecto de prueba aislado.");
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("El seeder de demostración está prohibido en producción.");
   }
 
-  // Actualizar también la lista de perfiles en storage (db/has_profiles.json)
-  const profiles = DEFAULT_USERS.map((u) => ({
-    email: u.email,
-    full_name: u.fullName,
-    faculty: "Facultad de Ingeniería y Ciencias Básicas",
-    program: u.program,
-    role: u.role,
-    daily_quota: u.role === "admin" ? 100 : 50,
-    preferred_voice:
-      u.email.includes("oswaldo") || u.email.includes("alex")
-        ? "es-CO-GonzaloNeural"
-        : "es-CO-SalomeNeural",
-  }));
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  const email = process.env.DEMO_USER_EMAIL;
+  const password = process.env.DEMO_USER_PASSWORD;
+  if (!url || !serviceKey || !email || !password) {
+    throw new Error("Define URL, clave server-only, DEMO_USER_EMAIL y DEMO_USER_PASSWORD en el entorno local seguro.");
+  }
+  if (password.length < 16) {
+    throw new Error("DEMO_USER_PASSWORD debe tener al menos 16 caracteres.");
+  }
 
-  const body = Buffer.from(JSON.stringify(profiles, null, 2), "utf-8");
-  await admin.storage
-    .from("has-h5p-store")
-    .upload("db/has_profiles.json", body, {
-      contentType: "application/json",
-      upsert: true,
-    });
-  console.log("Perfiles sincronizados en Supabase Storage (db/has_profiles.json)");
+  const admin = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await admin.auth.admin.createUser({
+    email: email.trim().toLowerCase(),
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: "Cuenta de demostración",
+      faculty: "Facultad de Ingeniería y Ciencias Básicas",
+      program: "Campus Digital UAO",
+    },
+  });
+  if (error) throw new Error(`No se pudo crear la cuenta de prueba: ${error.message}`);
+  if (!data.user) throw new Error("Supabase no devolvió el usuario de prueba creado.");
+
+  console.log(`Cuenta de prueba creada: ${data.user.email}. El trigger asigna el rol estándar professor.`);
+  console.log("No se imprimió ni almacenó la contraseña.");
 }
 
-seed().catch(console.error);
+main().catch((error) => {
+  console.error("Seeder cancelado:", error.message || "error desconocido");
+  process.exitCode = 1;
+});

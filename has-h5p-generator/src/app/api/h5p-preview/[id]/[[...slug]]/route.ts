@@ -1,163 +1,151 @@
 import { NextRequest, NextResponse } from "next/server";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { createHash } from "node:crypto";
 import JSZip from "jszip";
-import fs from "fs";
-import path from "path";
-import os from "os";
+import { getProjectForUser, downloadH5pPackageFromSupabase } from "@/lib/supabase-server";
+import { PREVIEW_COOKIE_NAME, verifyPreviewToken } from "@/lib/preview-token";
+import { isSafeProjectId } from "@/lib/project-validation";
 
 export const runtime = "nodejs";
 
-function getMimeType(filePath: string): string {
+const PUBLIC_DEMOS: Record<string, string> = {
+  "matematicas-discretas-act1": "matematicas-discretas-act1",
+  "matematicas-discretas-act0": "matematicas-discretas-act0",
+};
+const MAX_ENTRIES = 2_500;
+const MAX_ENTRY_BYTES = 30 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 150 * 1024 * 1024;
+const EXTRACTION_LOCKS = new Map<string, Promise<void>>();
+const SAFE_EXTENSIONS = new Set([
+  ".json", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".mp3", ".wav", ".ogg",
+  ".m4a", ".mp4", ".webm", ".vtt", ".pdf", ".txt", ".woff", ".woff2", ".ttf", ".otf",
+]);
+
+function isInside(base: string, candidate: string): boolean {
+  const relative = path.relative(path.resolve(base), path.resolve(candidate));
+  return relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative));
+}
+
+function safeRelativePath(slug?: string[]): string | null {
+  const segments = slug && slug.length ? slug : ["h5p.json"];
+  if (segments.length > 12) return null;
+  if (segments.some((segment) => !/^[A-Za-z0-9_.-]{1,150}$/.test(segment) || segment === "." || segment === "..")) return null;
+  const relative = segments.join("/");
+  if (relative.startsWith("/") || relative.includes("\\")) return null;
+  const extension = path.extname(relative).toLowerCase();
+  if (!SAFE_EXTENSIONS.has(extension)) return null;
+  return relative;
+}
+
+function contentType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
-  switch (ext) {
-    case ".json":
-      return "application/json; charset=utf-8";
-    case ".svg":
-      return "image/svg+xml; charset=utf-8";
-    case ".png":
-      return "image/png";
-    case ".jpg":
-    case ".jpeg":
-      return "image/jpeg";
-    case ".gif":
-      return "image/gif";
-    case ".webp":
-      return "image/webp";
-    case ".mp3":
-      return "audio/mpeg";
-    case ".wav":
-      return "audio/wav";
-    case ".ogg":
-      return "audio/ogg";
-    case ".mp4":
-      return "video/mp4";
-    default:
-      return "application/octet-stream";
+  const types: Record<string, string> = {
+    ".json": "application/json; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg", ".gif": "image/gif", ".webp": "image/webp", ".mp3": "audio/mpeg",
+    ".wav": "audio/wav", ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".mp4": "video/mp4",
+    ".webm": "video/webm", ".vtt": "text/vtt; charset=utf-8", ".pdf": "application/pdf",
+    ".txt": "text/plain; charset=utf-8", ".woff": "font/woff", ".woff2": "font/woff2",
+    ".ttf": "font/ttf", ".otf": "font/otf",
+  };
+  return types[ext] || "application/octet-stream";
+}
+
+async function unpackPrivatePackage(projectId: string, ownerId: string, targetDir: string, storagePath?: string | null): Promise<void> {
+  const cachedManifest = path.join(targetDir, "h5p.json");
+  if (fs.existsSync(cachedManifest)) return;
+  const lockKey = `${ownerId}:${projectId}:${createHash("sha256").update(storagePath || "legacy").digest("hex").slice(0, 16)}`;
+  const pending = EXTRACTION_LOCKS.get(lockKey);
+  if (pending) return pending;
+
+  const task = (async () => {
+    const buffer = await downloadH5pPackageFromSupabase(ownerId, projectId, storagePath);
+    const zip = await JSZip.loadAsync(buffer);
+    const names = Object.keys(zip.files);
+    if (names.length > MAX_ENTRIES) throw new Error("ZIP con demasiados archivos.");
+    const root = path.resolve(targetDir);
+    let expandedTotal = 0;
+    for (const [rawName, entry] of Object.entries(zip.files)) {
+      if (entry.dir) continue;
+      const normalized = rawName.replace(/\\/g, "/");
+      if (
+        normalized.startsWith("/") ||
+        /^[A-Za-z]:/.test(normalized) ||
+        normalized.split("/").some((part) => part === ".." || part === ".") ||
+        !(normalized === "h5p.json" || normalized.startsWith("content/"))
+      ) throw new Error("El ZIP contiene una ruta no permitida.");
+      if (normalized.toLowerCase().endsWith(".svg")) throw new Error("No se admiten SVG dentro del contenido H5P.");
+      const expandedSize = Number((entry as any)._data?.uncompressedSize || 0);
+      if (expandedSize > MAX_ENTRY_BYTES) throw new Error("El ZIP contiene un archivo demasiado grande.");
+      expandedTotal += expandedSize;
+      if (expandedTotal > MAX_TOTAL_BYTES) throw new Error("El ZIP supera el límite de expansión.");
+      const target = path.resolve(root, ...normalized.split("/"));
+      if (!isInside(root, target)) throw new Error("La ruta del ZIP sale del directorio permitido.");
+      const fileBuffer = await entry.async("nodebuffer");
+      if (fileBuffer.length > MAX_ENTRY_BYTES) throw new Error("El archivo descomprimido supera el límite.");
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, fileBuffer, { flag: "w" });
+    }
+    if (!fs.existsSync(cachedManifest)) throw new Error("El paquete no incluye h5p.json.");
+  })();
+  EXTRACTION_LOCKS.set(lockKey, task);
+  try {
+    await task;
+  } finally {
+    EXTRACTION_LOCKS.delete(lockKey);
   }
 }
 
-async function ensureTmpUnpackedFromCloud(
-  projectId: string,
-  tmpProjectDir: string,
-  forceRefresh = false
-): Promise<boolean> {
-  try {
-    const h5pJsonFile = path.join(tmpProjectDir, "h5p.json");
-    if (!forceRefresh && fs.existsSync(h5pJsonFile)) {
-      return true;
-    }
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      "https://jpwpuesdjrezlmpfjymt.supabase.co";
-    const pkgUrl = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/has-h5p-store/packages/${projectId}.h5p?t=${Date.now()}`;
-    const res = await fetch(pkgUrl, { cache: "no-store" });
-    if (!res.ok) return fs.existsSync(h5pJsonFile);
-
-    const buf = Buffer.from(await res.arrayBuffer());
-    const zip = await JSZip.loadAsync(buf);
-
-    for (const [entryPath, zipObj] of Object.entries(zip.files)) {
-      if (zipObj.dir) continue;
-      if (entryPath === "h5p.json" || entryPath.startsWith("content/")) {
-        const destFile = path.join(tmpProjectDir, entryPath);
-        fs.mkdirSync(path.dirname(destFile), { recursive: true });
-        const contentBuf = await zipObj.async("nodebuffer");
-        fs.writeFileSync(destFile, contentBuf);
-      }
-    }
-    return fs.existsSync(h5pJsonFile);
-  } catch {
-    return fs.existsSync(path.join(tmpProjectDir, "h5p.json"));
-  }
+function serveFile(candidate: string): NextResponse | null {
+  if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) return null;
+  const buffer = fs.readFileSync(candidate);
+  return new NextResponse(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      "Content-Type": contentType(candidate),
+      "Content-Length": String(buffer.length),
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    },
+  });
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ id: string; slug?: string[] }> }
 ) {
   try {
     const { id, slug } = await context.params;
-    const relSegments = slug && slug.length > 0 ? slug : ["h5p.json"];
-    const safeRelPath = relSegments
-      .map((s) => s.replace(/\.\./g, ""))
-      .join("/");
+    if (!isSafeProjectId(id)) return NextResponse.json({ error: "Identificador no válido." }, { status: 400 });
+    const relative = safeRelativePath(slug);
+    if (!relative) return NextResponse.json({ error: "Ruta de recurso no válida." }, { status: 400 });
 
-    const tmpProjectDir = path.join(os.tmpdir(), "preview-h5p", id);
-    const tmpCandidate = path.join(tmpProjectDir, safeRelPath);
-
-    // Si se pide h5p.json y la caché en /tmp tiene más de 8 segundos, refrescar desde Supabase Storage
-    let shouldRefreshCloud = false;
-    if (safeRelPath === "h5p.json") {
-      try {
-        if (fs.existsSync(tmpCandidate)) {
-          const ageMs = Date.now() - fs.statSync(tmpCandidate).mtimeMs;
-          if (ageMs > 8000) shouldRefreshCloud = true;
-        }
-      } catch {}
+    if (Object.prototype.hasOwnProperty.call(PUBLIC_DEMOS, id)) {
+      const publicRoot = path.resolve(process.cwd(), "public", "preview-h5p", PUBLIC_DEMOS[id]);
+      const candidate = path.resolve(publicRoot, ...relative.split("/"));
+      if (!isInside(publicRoot, candidate)) return NextResponse.json({ error: "Ruta no válida." }, { status: 400 });
+      const response = serveFile(candidate);
+      return response || NextResponse.json({ error: "Recurso de demostración no encontrado." }, { status: 404 });
     }
 
-    if (shouldRefreshCloud) {
-      await ensureTmpUnpackedFromCloud(id, tmpProjectDir, true);
+    const token = verifyPreviewToken(req.cookies.get(PREVIEW_COOKIE_NAME)?.value, id);
+    if (!token) return NextResponse.json({ error: "La vista previa expiró; vuelve a abrirla desde el proyecto." }, { status: 401 });
+    const project = await getProjectForUser(id, token.sub);
+    if (!project || project.status !== "ready") return NextResponse.json({ error: "Recurso no encontrado." }, { status: 404 });
+
+    const cacheVersion = createHash("sha256").update(project.storage_path || "legacy").digest("hex").slice(0, 16);
+    const root = path.resolve(os.tmpdir(), "preview-h5p", token.sub, id, cacheVersion);
+    const candidate = path.resolve(root, ...relative.split("/"));
+    if (!isInside(root, candidate)) return NextResponse.json({ error: "Ruta no válida." }, { status: 400 });
+    if (!fs.existsSync(path.join(root, "h5p.json"))) {
+      await unpackPrivatePackage(id, token.sub, root, project.storage_path);
     }
-
-    // 1. Verificar si ya existe en /tmp/preview-h5p/<id>
-    if (fs.existsSync(tmpCandidate) && fs.statSync(tmpCandidate).isFile()) {
-      const data = fs.readFileSync(tmpCandidate);
-      return new NextResponse(data, {
-        status: 200,
-        headers: {
-          "Content-Type": getMimeType(tmpCandidate),
-          "Cache-Control": "no-store, max-age=0",
-        },
-      });
-    }
-
-    // 2. Intentar desempaquetar desde Supabase Storage hacia /tmp/preview-h5p/<id>
-    const unpacked = await ensureTmpUnpackedFromCloud(id, tmpProjectDir, false);
-    if (unpacked && fs.existsSync(tmpCandidate) && fs.statSync(tmpCandidate).isFile()) {
-      const data = fs.readFileSync(tmpCandidate);
-      return new NextResponse(data, {
-        status: 200,
-        headers: {
-          "Content-Type": getMimeType(tmpCandidate),
-          "Cache-Control": "no-store, max-age=0",
-        },
-      });
-    }
-
-    // 3. Fallback a public/preview-h5p/<id> (o alias reto11-act1 / reto11-act0)
-    const aliasMap: Record<string, string> = {
-      "matematicas-discretas-act1": "reto11-act1",
-      "matematicas-discretas-act0": "reto11-act0",
-    };
-    const publicDirsToCheck = [
-      path.join(process.cwd(), "public", "preview-h5p", id),
-      ...(aliasMap[id]
-        ? [path.join(process.cwd(), "public", "preview-h5p", aliasMap[id])]
-        : []),
-    ];
-
-    for (const baseDir of publicDirsToCheck) {
-      const candidate = path.join(baseDir, safeRelPath);
-      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-        const data = fs.readFileSync(candidate);
-        return new NextResponse(data, {
-          status: 200,
-          headers: {
-            "Content-Type": getMimeType(candidate),
-            "Cache-Control": "no-store, max-age=0",
-          },
-        });
-      }
-    }
-
-    return NextResponse.json(
-      { error: `Recurso H5P no encontrado: ${id}/${safeRelPath}` },
-      { status: 404 }
-    );
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: "Error sirviendo vista previa H5P", details: err?.message },
-      { status: 500 }
-    );
+    const response = serveFile(candidate);
+    return response || NextResponse.json({ error: "Recurso del paquete no encontrado." }, { status: 404 });
+  } catch (error) {
+    console.error("[/api/h5p-preview]", error);
+    return NextResponse.json({ error: "No fue posible cargar la vista previa." }, { status: 503 });
   }
 }

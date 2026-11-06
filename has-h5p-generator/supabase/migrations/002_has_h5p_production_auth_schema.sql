@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS public.has_profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+-- 001 puede haber creado ya has_profiles sin esta columna; la añadimos antes del índice.
+ALTER TABLE public.has_profiles
+  ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
 -- Índices de consulta rápida
 CREATE INDEX IF NOT EXISTS idx_has_profiles_email ON public.has_profiles(email);
 CREATE INDEX IF NOT EXISTS idx_has_profiles_auth_user ON public.has_profiles(auth_user_id);
@@ -75,9 +79,17 @@ CREATE INDEX IF NOT EXISTS idx_has_usage_logs_email_created ON public.has_usage_
 -- 5. Trigger Automático: Crear Perfil al Registrarse en auth.users
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
-  INSERT INTO public.has_profiles (
+  IF NEW.email IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  INSERT INTO public.has_profiles AS profile (
     auth_user_id,
     email,
     full_name,
@@ -92,17 +104,16 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', SPLIT_PART(NEW.email, '@', 1)),
     COALESCE(NEW.raw_user_meta_data->>'faculty', 'Facultad de Ingeniería y Ciencias Básicas'),
     COALESCE(NEW.raw_user_meta_data->>'program', 'Campus Digital UAO'),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'professor'),
-    CASE WHEN COALESCE(NEW.raw_user_meta_data->>'role', '') = 'admin' THEN 100 ELSE 50 END,
+    'professor',
+    50,
     'es-CO-SalomeNeural'
   )
   ON CONFLICT (email) DO UPDATE SET
-    auth_user_id = EXCLUDED.auth_user_id,
-    full_name = EXCLUDED.full_name,
+    auth_user_id = COALESCE(profile.auth_user_id, EXCLUDED.auth_user_id),
     updated_at = timezone('utc'::text, now());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -116,77 +127,27 @@ ALTER TABLE public.has_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.has_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.has_usage_logs ENABLE ROW LEVEL SECURITY;
 
--- Políticas para has_profiles
-CREATE POLICY "Lectura pública de perfiles"
-  ON public.has_profiles FOR SELECT
-  USING (true);
-
-CREATE POLICY "Usuarios editan su propio perfil"
-  ON public.has_profiles FOR UPDATE
-  USING (auth.uid() = auth_user_id OR email = auth.jwt() ->> 'email');
-
--- Políticas para has_projects
--- A. Permitir lectura pública de los proyectos oficiales del Reto 11 para que los evaluadores puedan ver la demo
-CREATE POLICY "Proyectos públicos oficiales Reto 11"
-  ON public.has_projects FOR SELECT
-  USING (id IN ('matematicas-discretas-act1', 'matematicas-discretas-act0'));
-
--- B. Usuarios autenticados pueden ver todos sus proyectos personales
-CREATE POLICY "Usuarios ven sus propios proyectos"
-  ON public.has_projects FOR SELECT
-  USING (auth.jwt() ->> 'email' = user_email);
-
--- C. Usuarios autenticados pueden crear proyectos
-CREATE POLICY "Usuarios crean proyectos personales"
-  ON public.has_projects FOR INSERT
-  WITH CHECK (auth.jwt() ->> 'email' = user_email OR auth.jwt() IS NULL);
-
--- D. Usuarios autenticados pueden actualizar sus propios proyectos
-CREATE POLICY "Usuarios actualizan sus propios proyectos"
-  ON public.has_projects FOR UPDATE
-  USING (auth.jwt() ->> 'email' = user_email);
-
--- Políticas para has_usage_logs
-CREATE POLICY "Registro de auditoria para usuarios y servidor"
-  ON public.has_usage_logs FOR ALL
-  USING (true);
+-- El navegador nunca accede directamente a estas tablas; todas las operaciones
+-- pasan por handlers de servidor que verifican Supabase Auth y usan service-role.
+REVOKE ALL PRIVILEGES ON TABLE public.has_profiles FROM PUBLIC, anon, authenticated;
+REVOKE ALL PRIVILEGES ON TABLE public.has_projects FROM PUBLIC, anon, authenticated;
+REVOKE ALL PRIVILEGES ON TABLE public.has_usage_logs FROM PUBLIC, anon, authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 7. Configuración de Storage (Bucket: has-h5p-store)
 -- -----------------------------------------------------------------------------
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('has-h5p-store', 'has-h5p-store', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+VALUES ('has-h5p-store', 'has-h5p-store', false)
+ON CONFLICT (id) DO UPDATE SET public = false;
 
--- Permitir descarga pública de paquetes y plantillas desde Storage
-CREATE POLICY "Descarga publica de paquetes H5P"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'has-h5p-store');
-
--- Permitir subida de paquetes para usuarios autenticados y service-role
-CREATE POLICY "Subida de paquetes H5P"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'has-h5p-store');
-
-CREATE POLICY "Actualizacion de paquetes H5P"
-  ON storage.objects FOR UPDATE
-  USING (bucket_id = 'has-h5p-store');
+-- No se crean policies de cliente para este bucket privado. El servidor opera
+-- exclusivamente con service-role, que no depende de una policy de Storage.
 
 -- -----------------------------------------------------------------------------
--- 8. Datos Semilla: Perfiles de las 4 Cuentas de Prueba (+ Prof. Oswaldo)
+-- 8. No se crean cuentas ni perfiles de prueba por defecto.
+-- Auth crea perfiles nuevos con role=professor y cuota estándar. Las cuentas
+-- administrativas se aprovisionan fuera de banda y nunca con contraseñas semilla.
 -- -----------------------------------------------------------------------------
-INSERT INTO public.has_profiles (email, full_name, faculty, program, role, daily_quota, preferred_voice)
-VALUES
-  ('simon.barrera@uao.edu.co', 'Simón Barrera Ruíz', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica (EQ-36)', 'admin', 100, 'es-CO-SalomeNeural'),
-  ('hermaioni.delgado@uao.edu.co', 'Hermaioni Delgado Paz', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Mecatrónica (EQ-36)', 'admin', 100, 'es-CO-SalomeNeural'),
-  ('alex.silva@uao.edu.co', 'Alex Yohan Silva Mina', 'Facultad de Ingeniería y Ciencias Básicas', 'Ingeniería Informática (EQ-36)', 'admin', 100, 'es-CO-GonzaloNeural'),
-  ('demo.docente@uao.edu.co', 'Docente Invitado Demo', 'Facultad de Ingeniería y Ciencias Básicas', 'Campus Digital UAO', 'professor', 50, 'es-CO-SalomeNeural'),
-  ('oswaldo.rodriguez@uao.edu.co', 'Prof. Oswaldo Rodríguez Díaz', 'Facultad de Ingeniería y Ciencias Básicas', 'Matemáticas Discretas (Reto 11)', 'professor', 60, 'es-CO-GonzaloNeural')
-ON CONFLICT (email) DO UPDATE SET
-  full_name = EXCLUDED.full_name,
-  program = EXCLUDED.program,
-  role = EXCLUDED.role,
-  daily_quota = EXCLUDED.daily_quota;
 
 -- =============================================================================
 -- Fin del Script de Migración

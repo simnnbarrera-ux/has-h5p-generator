@@ -69,7 +69,7 @@ export default function TiltCard({
       onMouseLeave={handleMouseLeave}
       style={{
         ...style,
-        // @ts-ignore
+        // @ts-expect-error CSS custom properties are not part of React.CSSProperties.
         "--mouse-x": `${mousePos.x}%`,
         "--mouse-y": `${mousePos.y}%`,
       }}

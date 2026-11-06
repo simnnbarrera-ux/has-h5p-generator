@@ -24,7 +24,7 @@ export default function ParticleBackground() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    let mouse = { x: -1000, y: -1000, radius: 140 };
+    const mouse = { x: -1000, y: -1000, radius: 140 };
 
     const handleMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX;
