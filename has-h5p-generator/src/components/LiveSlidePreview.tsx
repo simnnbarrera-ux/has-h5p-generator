@@ -144,7 +144,7 @@ export default function LiveSlidePreview({ spec, slide, slideNumber }: LiveSlide
           </div>
 
           <div className={`relative z-10 flex h-full flex-col overflow-hidden p-[5%] ${isCoverOrClosing ? "items-center text-center" : "items-stretch"}`}>
-            <div className={`w-full ${isCoverOrClosing ? "mt-[2%]" : ""}`}>
+            <div className={`w-full ${isCoverOrClosing ? "mt-[5%]" : ""}`}>
               <div className="mb-[2%] flex items-center justify-between gap-2 text-[7px] font-bold uppercase tracking-[0.12em] sm:text-[9px]" style={{ color: colors.primary }}>
                 <span className="truncate">{spec.courseName || "Curso UAO"}</span>
                 <span className="shrink-0 rounded-full px-2 py-0.5 text-[6px] sm:text-[8px]" style={{ backgroundColor: colors.badgeBg, color: colors.badgeText }}>{base.theme.shortName}</span>
@@ -156,7 +156,7 @@ export default function LiveSlidePreview({ spec, slide, slideNumber }: LiveSlide
               {slide.subtitle && <p className={`mt-[1%] line-clamp-2 text-[clamp(8px,1.15vw,13px)] leading-snug ${isCoverOrClosing ? "mx-auto max-w-[78%]" : ""}`} style={{ color: colors.textMuted }}>{slide.subtitle}</p>}
             </div>
 
-            <div className={`mt-[3%] min-h-0 flex-1 ${showVisualColumn ? "grid grid-cols-[1fr_0.82fr] gap-[3%]" : ""} ${isReferenceLayout ? "grid grid-cols-2 gap-[4%]" : ""}`}>
+            <div className={`mt-[3%] min-h-0 flex-1 ${isCoverOrClosing ? "flex flex-col justify-center gap-[3%] py-[2%]" : ""} ${showVisualColumn ? "grid grid-cols-[1fr_0.82fr] gap-[3%]" : ""} ${isReferenceLayout ? "grid grid-cols-2 gap-[4%]" : ""}`}>
               <div className={`min-h-0 overflow-hidden ${isCardLayout ? "grid grid-cols-2 gap-[2%]" : "space-y-[2%]"}`}>
                 {isCardLayout && (
                   <>
@@ -184,8 +184,8 @@ export default function LiveSlidePreview({ spec, slide, slideNumber }: LiveSlide
               </div>
 
               {isCoverOrClosing && slideNumber === 1 && spec.slides.length > 1 && (
-                <div className="mt-[4%] w-full">
-                  <div className="mb-[1.2%] flex items-center justify-between gap-2 text-[7px] font-extrabold uppercase tracking-[0.12em] sm:text-[9px]" style={{ color: colors.primary }}>
+                <div className="w-full">
+                  <div className="mb-[1.5%] flex items-center justify-between gap-2 text-[8px] font-extrabold uppercase tracking-[0.12em] sm:text-[10px]" style={{ color: colors.primary }}>
                     <span>Recorrido de la presentación</span>
                     <span className="font-semibold tracking-normal" style={{ color: colors.textMuted }}>
                       {Math.min(spec.slides.length - 1, 3)} temas iniciales
@@ -195,18 +195,18 @@ export default function LiveSlidePreview({ spec, slide, slideNumber }: LiveSlide
                     {spec.slides.slice(1, 4).map((nextSlide, index) => (
                       <div
                         key={`cover-outline-${nextSlide.id || index}`}
-                        className="flex min-h-[42px] min-w-0 items-start gap-[4%] overflow-hidden rounded-lg border p-[2.5%] shadow-sm sm:min-h-[58px]"
+                        className="flex min-h-[56px] min-w-0 items-start gap-[4%] overflow-hidden rounded-lg border p-[3%] shadow-sm sm:min-h-[72px]"
                         style={{ backgroundColor: colors.cardBg, borderColor: colors.cardBorder }}
                       >
                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[7px] font-extrabold text-white sm:h-5 sm:w-5 sm:text-[8px]" style={{ backgroundColor: colors.primary }}>
                           {String(index + 1).padStart(2, "0")}
                         </span>
                         <span className="min-w-0">
-                          <span className="line-clamp-2 block text-[7px] font-bold leading-tight sm:text-[9px]" style={{ color: colors.textPrimary }}>
+                          <span className="line-clamp-2 block text-[8px] font-bold leading-tight sm:text-[10px]" style={{ color: colors.textPrimary }}>
                             {nextSlide.menuTitle || nextSlide.titleBlack || `Tema ${index + 1}`}
                           </span>
                           {nextSlide.subtitle && (
-                            <span className="mt-0.5 line-clamp-1 block text-[6px] leading-tight sm:text-[7px]" style={{ color: colors.textMuted }}>
+                            <span className="mt-0.5 line-clamp-1 block text-[7px] leading-tight sm:text-[8px]" style={{ color: colors.textMuted }}>
                               {nextSlide.subtitle}
                             </span>
                           )}

@@ -8,6 +8,9 @@ node_modules/
 out/
 /build/
 dist/
+# H5P library bundles are required runtime assets, not generated app output.
+!has-h5p-generator/public/h5p-libs/**/dist/
+!has-h5p-generator/public/h5p-libs/**/dist/**
 !has-h5p-generator/src/app/api/h5p/build/**
 
 # Environment files

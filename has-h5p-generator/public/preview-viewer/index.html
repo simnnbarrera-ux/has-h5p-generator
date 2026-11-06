@@ -23,9 +23,12 @@
       justify-content: center;
     }
     #h5p-wrapper {
-      width: 100%;
-      max-width: min(1080px, 98vw, calc((100vh - 16px) * 1.4545));
+      width: min(1080px, 98vw, calc((100vh - 12px) * 1.7778));
+      height: auto;
+      aspect-ratio: 16 / 9;
+      max-width: 100vw;
       max-height: calc(100vh - 12px);
+      min-height: 0;
       margin: auto;
       background: #ffffff;
       border: 1px solid #334155;
@@ -37,6 +40,13 @@
       position: relative;
     }
     #status {
+      position: absolute;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 36px 20px;
       text-align: center;
       font-size: 14px;
@@ -59,21 +69,50 @@
     #h5p-container {
       width: 100%;
       height: 100%;
+      min-height: 0;
+      flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+    #h5p-container .h5p-iframe-wrapper,
+    #h5p-container iframe.h5p-iframe {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      flex: 1 1 auto;
+    }
+    #h5p-container iframe.h5p-iframe {
+      display: block;
+      border: 0;
     }
   </style>
 
   <style id="has-h5p-presentation-styles">
     /* Course Presentation Flex Architecture */
+    html,
+    body,
+    .h5p-iframe,
+    .h5p-content {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+    }
+    body {
+      overflow: hidden !important;
+    }
     .h5p-content {
       border: none !important;
       background: transparent !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
     .h5p-course-presentation {
       width: 100% !important;
       height: 100% !important;
+      min-height: 0 !important;
+      flex: 1 1 auto !important;
       display: flex !important;
       flex-direction: column !important;
       justify-content: space-between !important;
@@ -401,6 +440,59 @@
         }
       }
 
+      function getPlayerFrame() {
+        return containerEl.querySelector('iframe.h5p-iframe, iframe');
+      }
+
+      function ensureStylesInFrame() {
+        var frame = getPlayerFrame();
+        var frameDocument = null;
+        try { frameDocument = frame && frame.contentDocument; } catch (e) {}
+        if (!frameDocument || !frameDocument.head) return false;
+
+        var sourceStyle = document.getElementById('has-h5p-presentation-styles');
+        if (sourceStyle && !frameDocument.getElementById('has-h5p-presentation-styles')) {
+          frameDocument.head.appendChild(sourceStyle.cloneNode(true));
+        }
+        return true;
+      }
+
+      function triggerPlayerResize() {
+        var frame = getPlayerFrame();
+        var playerWindow = null;
+        try { playerWindow = frame && frame.contentWindow; } catch (e) {}
+        if (!playerWindow) return;
+
+        try { playerWindow.dispatchEvent(new playerWindow.Event('resize')); } catch (e) {}
+        var playerH5P = playerWindow.H5P;
+        if (playerH5P && playerH5P.instances && playerH5P.instances[0]) {
+          try { playerH5P.trigger(playerH5P.instances[0], 'resize'); } catch (e) {}
+        }
+      }
+
+      function waitForPresentation(timeoutMs) {
+        return new Promise(function (resolve, reject) {
+          var startedAt = Date.now();
+          function check() {
+            var frame = getPlayerFrame();
+            var frameDocument = null;
+            try { frameDocument = frame && frame.contentDocument; } catch (e) {}
+
+            if (frameDocument && frameDocument.querySelector('.h5p-course-presentation')) {
+              ensureStylesInFrame();
+              resolve();
+              return;
+            }
+            if (Date.now() - startedAt >= timeoutMs) {
+              reject(new Error('H5P no montó el contenido Course Presentation dentro del tiempo esperado.'));
+              return;
+            }
+            window.setTimeout(check, 100);
+          }
+          check();
+        });
+      }
+
       function initPlayer(jsonBasePath) {
         return new H5PStandalone.H5P(containerEl, {
           h5pJsonPath: jsonBasePath,
@@ -412,17 +504,13 @@
       }
 
       function onPlayerReady() {
-        statusEl.style.display = 'none';
         ensureStylesOnTop();
+        ensureStylesInFrame();
+        statusEl.style.display = 'none';
 
         // Trigger resize sync so H5P accurately measures container
         setTimeout(function () {
-          window.dispatchEvent(new Event('resize'));
-          if (window.H5P && window.H5P.instances && window.H5P.instances[0]) {
-            try {
-              window.H5P.trigger(window.H5P.instances[0], 'resize');
-            } catch (e) {}
-          }
+          triggerPlayerResize();
         }, 150);
       }
 
@@ -438,6 +526,7 @@
           }
         }
         ensureStylesOnTop();
+        ensureStylesInFrame();
       });
 
       observer.observe(containerEl, {
@@ -450,17 +539,15 @@
       // Window resize trigger to re-sync H5P dimensions
       window.addEventListener('resize', function () {
         ensureStylesOnTop();
-        if (window.H5P && window.H5P.instances && window.H5P.instances[0]) {
-          try {
-            window.H5P.trigger(window.H5P.instances[0], 'resize');
-          } catch (e) {}
-        }
+        ensureStylesInFrame();
+        triggerPlayerResize();
       });
 
       var apiPath = '/api/h5p-preview/' + encodeURIComponent(id);
 
       // H5PStandalone puede usar fetch o XMLHttpRequest según la versión del bundle.
       // Ambas rutas son same-origin; se fuerza el envío de la cookie HttpOnly de preview.
+      var previewAuthorizationRejected = false;
       var nativeFetch = window.fetch.bind(window);
       window.fetch = function (input, init) {
         var rawUrl = typeof input === 'string' ? input : (input && input.url) || '';
@@ -468,21 +555,35 @@
         try { requestUrl = new URL(rawUrl, window.location.href); } catch (e) {}
         if (requestUrl && requestUrl.origin === window.location.origin && requestUrl.pathname.indexOf('/api/h5p-preview/') === 0) {
           var options = Object.assign({}, init || {}, { credentials: 'include', cache: 'no-store' });
-          return nativeFetch(input, options);
+          return nativeFetch(input, options).then(function (response) {
+            if (response.status === 401) previewAuthorizationRejected = true;
+            return response;
+          });
         }
         return nativeFetch(input, init);
       };
 
       var nativeXhrOpen = XMLHttpRequest.prototype.open;
+      var nativeXhrSend = XMLHttpRequest.prototype.send;
       XMLHttpRequest.prototype.open = function (method, url) {
         var result = nativeXhrOpen.apply(this, arguments);
         try {
           var requestUrl = new URL(url, window.location.href);
           if (requestUrl.origin === window.location.origin && requestUrl.pathname.indexOf('/api/h5p-preview/') === 0) {
             this.withCredentials = true;
+            this.__hasH5pPreviewRequest = true;
           }
         } catch (e) {}
         return result;
+      };
+      XMLHttpRequest.prototype.send = function () {
+        if (this.__hasH5pPreviewRequest) {
+          var xhr = this;
+          xhr.addEventListener('load', function () {
+            if (xhr.status === 401) previewAuthorizationRejected = true;
+          }, { once: true });
+        }
+        return nativeXhrSend.apply(this, arguments);
       };
 
       function renderFailure(title, message, needsAuthorization) {
@@ -538,13 +639,16 @@
           }
 
           await initPlayer(apiPath);
+          await waitForPresentation(30000);
           onPlayerReady();
         } catch (error) {
           console.error('Error cargando reproductor H5P:', error);
           renderFailure(
-            'No se pudo cargar la vista previa',
-            'El paquete no respondió correctamente. Puedes reautorizar la sesión o volver a intentar la carga.',
-            true
+            previewAuthorizationRejected ? 'La autorización de vista previa expiró' : 'El reproductor no terminó de cargar',
+            previewAuthorizationRejected
+              ? 'Vuelve a autorizar la vista previa desde el estudio e inténtalo de nuevo.'
+              : 'No se montó la presentación interactiva. Recarga para volver a intentarlo; si persiste, vuelve a compilar el paquete.',
+            previewAuthorizationRejected
           );
         }
       }
