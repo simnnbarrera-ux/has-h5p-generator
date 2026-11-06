@@ -264,9 +264,9 @@ export function htmlDestacado(
   fontStack = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
   colorTexto = NEGRO
 ): string {
-  return `<p style="margin:0;line-height:1.3;font-family:${fontStack};"><span style="font-size:${tam};color:${colorTexto};font-family:${fontStack};"><em><strong>${escHtml(
+  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:4px 10px;border:none;text-align:center;"><p style="margin:0;line-height:1.35;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${colorTexto};font-family:${fontStack};"><em><strong>${escHtml(
     t
-  )}</strong></em></span></p>`;
+  )}</strong></em></span></p></td></tr></table>`;
 }
 
 export function htmlPendiente(
@@ -274,9 +274,9 @@ export function htmlPendiente(
   tam = "0.85em",
   fontStack = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif"
 ): string {
-  return `<p style="margin:0;line-height:1.3;font-family:${fontStack};"><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};"><strong>PENDIENTE: </strong></span><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};">${escHtml(
+  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:4px 10px;border:none;text-align:center;"><p style="margin:0;line-height:1.3;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};"><strong>PENDIENTE: </strong></span><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};">${escHtml(
     t
-  )}</span></p>`;
+  )}</span></p></td></tr></table>`;
 }
 
 export function htmlLista(
@@ -1554,52 +1554,101 @@ function compileSlideFromSpec(
           slideSpec.subtitle || slideSpec.menuTitle
         )}</strong></span></p>`;
 
-        els[3].x = 6.9;
-        els[3].y = 29.5;
-        els[3].width = 86.2;
-        els[3].height = hasBottomBox ? 34 : 58;
-        els[3].action.params.text = htmlParrafos(
-          slideSpec.paragraphs,
-          sz("0.85em"),
-          colorTextPrimary,
-          fontStack
+        const hasParagraphs = Boolean(
+          slideSpec.paragraphs &&
+          slideSpec.paragraphs.some((p) => p.trim().length > 0)
         );
 
-        if (slideSpec.highlightBox) {
-          els[2].x = 6.9;
-          els[2].y = 64.5;
-          els[2].width = 86.2;
-          els[2].height = 22.5;
-          if (els[2]?.action?.params?.shape) {
-            els[2].action.params.shape.fillColor = colorHighlightBg;
-            els[2].action.params.shape.borderColor = colorAccent;
-            els[2].action.params.shape.borderWidth = "2";
-            els[2].action.params.shape.borderRadius = "10";
-          }
-          els[4].x = 8.5;
-          els[4].y = 66.5;
-          els[4].width = 83;
-          els[4].height = 18.5;
-          els[4].action.params.text = htmlDestacado(
-            slideSpec.highlightBox,
-            sz("0.84em"),
-            fontStack,
-            colorTextPrimary
-          );
-        } else if (slideSpec.pendingNote) {
-          els[2].x = 6.9;
-          els[2].y = 64.5;
-          els[2].width = 86.2;
-          els[2].height = 22.5;
-          els[4].x = 8.5;
-          els[4].y = 66.5;
-          els[4].width = 83;
-          els[4].height = 18.5;
-          els[4].action.params.text = htmlPendiente(
-            slideSpec.pendingNote,
-            sz("0.82em"),
+        if (hasParagraphs) {
+          els[3].x = 6.9;
+          els[3].y = 29.5;
+          els[3].width = 86.2;
+          els[3].height = hasBottomBox ? 34 : 58;
+          els[3].action.params.text = htmlParrafos(
+            slideSpec.paragraphs,
+            sz("0.85em"),
+            colorTextPrimary,
             fontStack
           );
+        } else {
+          toRemove.add(3);
+        }
+
+        if (slideSpec.highlightBox) {
+          if (hasParagraphs) {
+            els[2].x = 6.9;
+            els[2].y = 64.5;
+            els[2].width = 86.2;
+            els[2].height = 22.5;
+            if (els[2]?.action?.params?.shape) {
+              els[2].action.params.shape.fillColor = colorHighlightBg;
+              els[2].action.params.shape.borderColor = colorAccent;
+              els[2].action.params.shape.borderWidth = "2";
+              els[2].action.params.shape.borderRadius = "10";
+            }
+            els[4].x = 8.5;
+            els[4].y = 66.5;
+            els[4].width = 83;
+            els[4].height = 18.5;
+            els[4].action.params.text = htmlDestacado(
+              slideSpec.highlightBox,
+              sz("0.84em"),
+              fontStack,
+              colorTextPrimary
+            );
+          } else {
+            // Centrado vertical completo si no hay párrafos
+            els[2].x = 6.9;
+            els[2].y = 33;
+            els[2].width = 86.2;
+            els[2].height = 42;
+            if (els[2]?.action?.params?.shape) {
+              els[2].action.params.shape.fillColor = colorHighlightBg;
+              els[2].action.params.shape.borderColor = colorAccent;
+              els[2].action.params.shape.borderWidth = "2";
+              els[2].action.params.shape.borderRadius = "12";
+            }
+            els[4].x = 8.5;
+            els[4].y = 35;
+            els[4].width = 83;
+            els[4].height = 38;
+            els[4].action.params.text = htmlDestacado(
+              slideSpec.highlightBox,
+              sz("0.96em"),
+              fontStack,
+              colorTextPrimary
+            );
+          }
+        } else if (slideSpec.pendingNote) {
+          if (hasParagraphs) {
+            els[2].x = 6.9;
+            els[2].y = 64.5;
+            els[2].width = 86.2;
+            els[2].height = 22.5;
+            els[4].x = 8.5;
+            els[4].y = 66.5;
+            els[4].width = 83;
+            els[4].height = 18.5;
+            els[4].action.params.text = htmlPendiente(
+              slideSpec.pendingNote,
+              sz("0.82em"),
+              fontStack
+            );
+          } else {
+            els[2].x = 6.9;
+            els[2].y = 33;
+            els[2].width = 86.2;
+            els[2].height = 42;
+            els[4].x = 8.5;
+            els[4].y = 35;
+            els[4].width = 83;
+            els[4].height = 38;
+            els[4].action.params.text = htmlPendiente(
+              slideSpec.pendingNote,
+              sz("0.92em"),
+              fontStack
+            );
+          }
         } else {
           toRemove.add(2);
           toRemove.add(4);

@@ -21,6 +21,7 @@ import {
   Type,
   CheckCircle2,
   BookOpen,
+  Printer,
 } from "lucide-react";
 import {
   H5P_ACTIVITY_CATALOG,
@@ -320,6 +321,16 @@ export default function WizardSteps({
     setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     showToast("¡Estructura de Libro Moodle descargada exitosamente! Formato JSON accesible");
   };
+
+  const handlePrintPdf = useCallback(() => {
+    const frame = document.querySelector('iframe[title="Reproductor H5P en vivo"]') as HTMLIFrameElement | null;
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage("print-h5p-pdf", "*");
+      showToast("Preparando todas las diapositivas para impresión o guardado en PDF...");
+    } else {
+      window.print();
+    }
+  }, [showToast]);
 
   // Step change handler
   const handleStepChange = async (targetStep: 1 | 2 | 3 | 4 | 5) => {
@@ -1938,7 +1949,7 @@ export default function WizardSteps({
             </div>
 
             {/* Downloads strip */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={handleFinishAndDownload}
@@ -1964,6 +1975,30 @@ export default function WizardSteps({
                 </div>
                 <span className="text-[11px] font-bold text-[#8A1428] bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200/80 group-hover:bg-[#8A1428] group-hover:text-white transition">
                   Descargar
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintPdf}
+                disabled={compiling || !previewReady}
+                className="p-4 bg-white hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-600 rounded-2xl transition flex items-center justify-between text-left group shadow-sm disabled:opacity-60 cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Printer className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-700">
+                      Guardar Diapositivas (PDF)
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      Impresión horizontal completa
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/80 group-hover:bg-emerald-700 group-hover:text-white transition">
+                  Imprimir
                 </span>
               </button>
 

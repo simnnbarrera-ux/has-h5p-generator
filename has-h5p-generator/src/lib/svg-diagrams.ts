@@ -88,8 +88,8 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
   <rect x="55" y="455" width="690" height="105" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
   <text x="400" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#8A1428">Competencia Cuantitativa y Pensamiento Logico-Matematico</text>
-  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">Integrar modelos discretos y algoritmos computacionales en escenarios reales de Ingenieria de Datos y Multimedia.</text>
-  <text x="400" y="544" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#0099E6">01010101 01000001 01001111  ->  "UAO"  |  IEEE-754 (32 & 64 bits)</text>
+  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">Integrar modelos discretos y algoritmos computacionales en escenarios reales de Ingenieria de Datos y Multimedia.</text>
+  <text x="400" y="544" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#0099E6">01010101 01000001 01001111  -&gt;  &quot;UAO&quot;  |  IEEE-754 (32 &amp; 64 bits)</text>
 </svg>`,
   },
 
@@ -134,7 +134,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <text x="586" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa / Fraccion Normalizada (M)</text>
     <text x="586" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#E0F3FA">23 bits [b22 ... b0] (bit implicito 1.)</text>
 
-    <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (-12.5)_dec = -1100.1_bin = -1.1001_bin x 2^3 -> S=1 | E=130 (10000010_bin) | M=1001000...0_bin</text>
+    <text x="24" y="138" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">Ejemplo (-12.5)_dec = -1100.1_bin = -1.1001_bin x 2^3 -&gt; S=1 | E=130 (10000010_bin) | M=1001000...0_bin</text>
   </g>
 
   <!-- Precision Doble 64 Bits -->
@@ -154,8 +154,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <text x="596" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#FFFFFF">Mantisa de Alta Precision (M)</text>
     <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b51 ... b0] (15-17 digitos dec.)</text>
 
-    <text x="24" y="140" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">Nota clave:</text>
-    <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de numeros racionales diadicos (k / 2^n) tiene representacion exacta en punto flotante.</text>
+    <text x="24" y="140" font-family="Arial, sans-serif" font-size="12" fill="#334155"><tspan font-weight="bold" fill="#8A1428">Nota clave: </tspan>Solo un subconjunto finito de numeros racionales diadicos (k / 2^n) tiene representacion exacta en punto flotante.</text>
   </g>
 </svg>`,
   },
@@ -176,10 +175,10 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
   <!-- Definicion formal 7-tupla -->
   <rect x="24" y="110" width="812" height="70" rx="12" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
-  <text x="430" y="138" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#0B0F19">
-    M = ( Q, Sigma, Gamma, delta, q0, B, F )   donde   delta : Q x Gamma -> Q x Gamma x { L, R }
+  <text x="430" y="138" text-anchor="middle" font-family="Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#0B0F19">
+    M = ( Q, Sigma, Gamma, delta, q0, B, F )   donde   delta : Q x Gamma -&gt; Q x Gamma x { L, R }
   </text>
-  <text x="430" y="164" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">
+  <text x="430" y="162" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">
     Q: Estados finitos | Sigma: Alfabeto {0,1} | Gamma: Cinta | delta: Transicion | q0: Inicial | F: Finales
   </text>
 
@@ -218,12 +217,12 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
     <!-- Cabezal Lector/Escritor -->
     <polygon points="380,104 354,142 406,142" fill="#8A1428"/>
-    <rect x="240" y="142" width="280" height="156" rx="16" fill="#0B0F19" stroke="#0099E6" stroke-width="3"/>
-    <text x="380" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0099E6">CABEZAL LECTOR / ESCRITOR</text>
-    <text x="380" y="204" text-anchor="middle" font-family="monospace" font-size="16" fill="#FFFFFF">Estado Actual: q_bin (Normalizando)</text>
-    <text x="380" y="234" text-anchor="middle" font-family="monospace" font-size="15" fill="#E0F3FA">Regla: delta(q_bin, '1') = (q3, '0', R)</text>
-    <rect x="275" y="252" width="210" height="30" rx="8" fill="#8A1428"/>
-    <text x="380" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">1. Lee -> 2. Escribe -> 3. Mueve</text>
+    <rect x="200" y="142" width="360" height="156" rx="16" fill="#0B0F19" stroke="#0099E6" stroke-width="3"/>
+    <text x="380" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#0099E6">CABEZAL LECTOR / ESCRITOR</text>
+    <text x="380" y="204" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF">Estado Actual: q_bin (Normalizando)</text>
+    <text x="380" y="232" text-anchor="middle" font-family="Arial, sans-serif" font-size="13.5" fill="#E0F3FA">Regla: delta(q_bin, &apos;1&apos;) = (q3, &apos;0&apos;, R)</text>
+    <rect x="260" y="252" width="240" height="30" rx="8" fill="#8A1428"/>
+    <text x="380" y="272" text-anchor="middle" font-family="Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#FFFFFF">1. Lee -&gt; 2. Escribe -&gt; 3. Mueve</text>
   </g>
 </svg>`,
   },
@@ -248,13 +247,13 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
 
   <!-- Racionales Q -->
   <rect x="46" y="156" width="490" height="334" rx="16" fill="#E0F3FA" stroke="#0099E6" stroke-width="3"/>
-  <text x="68" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0099E6">Q - Racionales = { a/b | a, b en Z, b != 0 }</text>
-  <text x="68" y="212" font-family="monospace" font-size="14" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333... (periodico)</text>
+  <text x="68" y="188" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#0099E6">Q - Racionales = { a/b | a, b en Z, b != 0 }</text>
+  <text x="68" y="212" font-family="Arial, sans-serif" font-size="12" fill="#0B0F19">Ejemplos: 1/2 = 0.5 (exacto en base 2), 1/3 = 0.333... (periodico)</text>
 
   <!-- Enteros Z -->
   <rect x="74" y="232" width="434" height="236" rx="14" fill="#FFFFFF" stroke="#1D5CFF" stroke-width="2.5"/>
-  <text x="96" y="264" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#1D5CFF">Z - Enteros = { ..., -3, -2, -1, 0, 1, 2, 3, ... }</text>
-  <text x="96" y="288" font-family="monospace" font-size="14" fill="#334155">Complemento a 2 / Signo-Magnitud en registros enteros</text>
+  <text x="96" y="264" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1D5CFF">Z - Enteros = { ..., -3, -2, -1, 0, 1, 2, 3, ... }</text>
+  <text x="96" y="288" font-family="Arial, sans-serif" font-size="12" fill="#334155">Complemento a 2 / Signo-Magnitud en registros enteros</text>
 
   <!-- Naturales N -->
   <rect x="104" y="308" width="374" height="138" rx="12" fill="#8A1428"/>
@@ -267,9 +266,9 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">I - Irracionales</text>
   <text x="675" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">No pueden expresarse</text>
   <text x="675" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">como fraccion a/b.</text>
-  <text x="675" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">pi ~ 3.14159265...</text>
-  <text x="675" y="308" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">sqrt(2) ~ 1.41421356...</text>
-  <text x="675" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">e ~ 2.71828182...</text>
+  <text x="675" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#8A1428">pi ~ 3.14159265...</text>
+  <text x="675" y="308" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#8A1428">sqrt(2) ~ 1.41421356...</text>
+  <text x="675" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="bold" fill="#8A1428">e ~ 2.71828182...</text>
   <rect x="574" y="374" width="202" height="92" rx="10" fill="#8A1428"/>
   <text x="675" y="402" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF">EN PUNTO FLOTANTE:</text>
   <text x="675" y="424" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#E0F3FA">Siempre se truncan o</text>
@@ -327,10 +326,10 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <!-- Pesos posicionales de 1 Byte -->
   <rect x="24" y="390" width="812" height="126" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="430" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#8A1428">PESOS POSICIONALES DE UN BYTE (8 BITS): b7 b6 b5 b4 b3 b2 b1 b0</text>
-  <text x="430" y="454" text-anchor="middle" font-family="monospace" font-size="20" font-weight="bold" fill="#0B0F19">
+  <text x="430" y="454" text-anchor="middle" font-family="monospace" font-size="16" font-weight="bold" fill="#0B0F19">
     [ 2^7=128 | 2^6=64 | 2^5=32 | 2^4=16 | 2^3=8 | 2^2=4 | 2^1=2 | 2^0=1 ]
   </text>
-  <text x="430" y="488" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">
+  <text x="430" y="488" text-anchor="middle" font-family="Arial, sans-serif" font-size="12.5" fill="#334155">
     Proceso inverso: agrupar la cadena binaria en bloques de 8 bits, sumar las potencias activas y mapear al caracter ASCII.
   </text>
 </svg>`,
