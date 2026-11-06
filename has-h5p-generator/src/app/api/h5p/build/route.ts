@@ -102,8 +102,9 @@ export async function POST(req: NextRequest) {
       audioAssets,
       templateBuffer,
       (svgContent) =>
-        sharp(Buffer.from(svgContent, "utf-8"))
-          .png({ quality: 95 })
+        // 180 dpi (2.5x): a densidad nativa los diagramas se veían borrosos.
+        sharp(Buffer.from(svgContent, "utf-8"), { density: 180 })
+          .png({ compressionLevel: 9 })
           .toBuffer()
     );
 

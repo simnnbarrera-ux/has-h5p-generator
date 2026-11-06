@@ -5,6 +5,7 @@
 // exporta simultáneamente .h5p + script editable ph5p.py + Libro de Moodle.
 // =============================================================================
 
+import { CP_SLIDE_HEIGHT_PX, CP_SLIDE_WIDTH_PX, fitTextElementsToBoxes } from "./text-fit";
 import JSZip from "jszip";
 import {
   UAO_TEMPLATE_COLORS,
@@ -352,16 +353,39 @@ function collectUsedFiles(obj: any, acc = new Set<string>()): Set<string> {
   return acc;
 }
 
+/**
+ * H5P.Image estira la imagen al tamaño exacto de su caja. Si la proporción de la
+ * caja no coincide con la del diagrama, este se deforma. Se encoge la caja para
+ * respetar la proporción de la imagen y se centra dentro del espacio original.
+ */
+export function fitBoxToAspect(
+  box: { x: number; y: number; width: number; height: number },
+  imageWidth: number,
+  imageHeight: number
+): { x: number; y: number; width: number; height: number } {
+  if (!(imageWidth > 0) || !(imageHeight > 0) || !(box.width > 0) || !(box.height > 0)) return { ...box };
+  const imageAspect = imageWidth / imageHeight;
+  const boxAspect = (box.width * CP_SLIDE_WIDTH_PX) / (box.height * CP_SLIDE_HEIGHT_PX);
+  if (Math.abs(boxAspect - imageAspect) / imageAspect < 0.01) return { ...box };
+  if (boxAspect > imageAspect) {
+    const width = (box.height * CP_SLIDE_HEIGHT_PX * imageAspect) / CP_SLIDE_WIDTH_PX;
+    return { x: box.x + (box.width - width) / 2, y: box.y, width, height: box.height };
+  }
+  const height = (box.width * CP_SLIDE_WIDTH_PX) / imageAspect / CP_SLIDE_HEIGHT_PX;
+  return { x: box.x, y: box.y + (box.height - height) / 2, width: box.width, height };
+}
+
 function makeImageElement(
   baseCoords: { x: number; y: number; width: number; height: number },
   svgAsset: GeneratedSvgAsset
 ) {
   const pngFilename = svgAsset.filename.replace(/\.svg$/i, ".png");
+  const box = fitBoxToAspect(baseCoords, svgAsset.width, svgAsset.height);
   return {
-    x: baseCoords.x,
-    y: baseCoords.y,
-    width: baseCoords.width,
-    height: baseCoords.height,
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
     backgroundOpacity: 0,
     displayAsButton: false,
     buttonSize: "big",
@@ -2026,7 +2050,15 @@ function compileSlideFromSpec(
       toRemove.add(5);
       toRemove.add(6);
       toRemove.add(7);
-      handleReferencesPopup(8, 9, 10);
+      if (slideSpec.apaReferences?.length && !svgAsset?.apaCitation) {
+        // Las referencias ya van en el cuerpo de la diapositiva; repetirlas en el
+        // popup "Referencias" las mostraba dos veces, una encima de la otra.
+        toRemove.add(8);
+        toRemove.add(9);
+        toRemove.add(10);
+      } else {
+        handleReferencesPopup(8, 9, 10);
+      }
       if (slideSpec.interaction) {
         additions.push(
           buildInteractionElement(
@@ -2368,6 +2400,7 @@ function compileSlideFromSpec(
     const fallbackBody = [...(slideSpec.paragraphs || []), ...(slideSpec.bullets || [])].filter((text) => text.trim() && !isTemplatePlaceholder(text)).slice(0, 4);
     if (fallbackBody.length || !slideSpec.interaction) raw.elements.push({ x: 7, y: 28, width: 86, height: 58, backgroundOpacity: 0, displayAsButton: false, buttonSize: "big", goToSlideType: "specified", invisible: false, action: { library: "H5P.AdvancedText 1.1", metadata: { contentType: "Text", license: "U", title: "Contenido de diapositiva" }, params: { text: htmlParrafos(fallbackBody.length ? fallbackBody : [`Explora los conceptos principales de ${slideSpec.menuTitle}.`], "0.9em", colorTextPrimary, fontStack) } } });
   }
+  fitTextElementsToBoxes(raw.elements);
   return raw;
 }
 
@@ -2726,8 +2759,11 @@ export async function buildH5pPackageFromSpec(
 
   const rasterize = rasterizeSvgToPng ?? (async (svgContent: string) => {
     const sharp = eval("require")("sharp");
-    return sharp(Buffer.from(svgContent, "utf-8"))
-      .png({ quality: 95 })
+    // El SVG se rasteriza a su tamaño nativo (~860px) por defecto; en pantallas de
+    // alta densidad y en Moodle a pantalla completa se veía borroso. Se rasteriza a
+    // 2.5x (72 dpi -> 180 dpi) para que el texto del diagrama quede nítido.
+    return sharp(Buffer.from(svgContent, "utf-8"), { density: 180 })
+      .png({ compressionLevel: 9 })
       .toBuffer() as Promise<Buffer>;
   });
 
