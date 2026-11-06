@@ -31,6 +31,25 @@ No colocar secretos en archivos rastreados ni en variables `NEXT_PUBLIC_*`.
 
 El compilador necesita el **paquete original de plantilla UAO** usado por los layouts (H5P Course Presentation 1.27), con `h5p.json` y `content/content.json` en la raíz del ZIP y las diapositivas/elementos de plantilla intactos. Los paquetes dentro de `public/preview-h5p/` son demos ya compiladas, no sustituyen esa plantilla base. Cárgala en `has-h5p-store/templates/fiuao-6-215/plantilla.h5p` o define `PH5P_TEMPLATE_PATH` en el servidor. Sin ese artefacto, la aplicación puede arrancar y mostrar demos, pero no compilar proyectos nuevos.
 
+## Catálogo UAO del selector
+
+El selector incluye 20 diseños agrupados en Facultad, Marca UAO y Composiciones. Los previews estáticos viven en `public/uao-templates/`; no contienen credenciales ni paquetes H5P.
+
+Las cinco bases completas Facultad se guardan en el bucket **privado** `has-h5p-store` con estas rutas: `templates/uao/facultad/facultad-1.h5p` a `facultad-5.h5p`. Las cinco se probaron con el compilador y ofrecen 34 diapositivas base. El servidor elige la ruta mediante `selectedTemplateId`; no se expone una URL pública.
+
+Marca UAO y Composiciones incluyen muestras de nueve diapositivas, no bases compatibles con las 19 interacciones del generador. Para evitar paquetes incompletos o interacciones rotas, su vista previa se ofrece en el selector y su paleta se adapta a la base H5P completa; sus paquetes de muestra no se cargan ni se usan para compilar.
+
+No se requiere una migración SQL adicional: `selectedTemplateId` se conserva dentro de `project_spec`. En otro entorno, vuelve a cargar las cinco bases desde el ZIP original con `CONFIRM_UPLOAD_UAO_TEMPLATES=1`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` configuradas en el entorno local seguro:
+
+```bash
+CONFIRM_UPLOAD_UAO_TEMPLATES=1 \
+SUPABASE_URL="https://<project-ref>.supabase.co" \
+SUPABASE_SERVICE_ROLE_KEY="<service-role-secret>" \
+npm run upload:uao-template-bases -- /ruta/plantillas-uao-html-h5p.zip
+```
+
+El script comprueba que el bucket sea privado, verifica si los objetos ya coinciden y solo permite reemplazar un paquete distinto con `--overwrite` explícito.
+
 La migración 002 no crea usuarios ni perfiles administrativos por defecto. Los usuarios se crean con Supabase Auth y reciben el rol estándar; cualquier promoción a administrador debe hacerse manualmente y por un operador autorizado.
 
 ## Paquetes previos a la privatización

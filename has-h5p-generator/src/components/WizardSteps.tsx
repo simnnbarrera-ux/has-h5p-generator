@@ -27,10 +27,10 @@ import {
   EDGE_NEURAL_VOICES,
   H5P_FONT_OPTIONS,
   UAO_SLIDE_LAYOUTS,
-  H5P_PRESENTATION_TEMPLATES,
   getPresentationTemplate,
   findSlideLayout,
 } from "@/lib/h5p-catalog";
+import { getUaoTemplate } from "@/lib/uao-template-catalog";
 import {
   HasProjectSpec,
   HasSlideSpec,
@@ -38,6 +38,7 @@ import {
   generateMoodleBookJson,
 } from "@/lib/h5p-engine";
 import TiltCard from "./TiltCard";
+import PresentationTemplateGallery from "./PresentationTemplateGallery";
 import { apiFetch } from "@/lib/api-client";
 import { supportsVisualSpace } from "@/lib/visual-space";
 
@@ -262,17 +263,23 @@ export default function WizardSteps({
   // Activity filter state in Step 2
   const [activityCategory, setActivityCategory] = useState<string>("all");
 
-  // Template Preview & Selection state in Step 1
-  const [hoveredTemplateId, setHoveredTemplateId] = useState<string | null>(null);
-
   const handleSelectTemplate = (templateId: string) => {
-    const chosenTmpl = getPresentationTemplate(templateId);
-    setSpec((prev) => ({
-      ...prev,
-      templateId: chosenTmpl.id,
-      fontFamily: prev.fontFamily || chosenTmpl.recommendedFont,
-    }));
-    showToast(`Plantilla "${chosenTmpl.shortName}" seleccionada exitosamente.`);
+    const chosenTmpl = getUaoTemplate(templateId);
+    if (!chosenTmpl) return;
+    setSpec((prev) => {
+      const previousTemplate = getUaoTemplate(prev.selectedTemplateId);
+      const hasCustomFont =
+        Boolean(prev.fontFamily) &&
+        prev.fontFamily !== previousTemplate?.theme.recommendedFont;
+      return {
+        ...prev,
+        selectedTemplateId: chosenTmpl.id,
+        fontFamily: hasCustomFont
+          ? prev.fontFamily
+          : chosenTmpl.theme.recommendedFont,
+      };
+    });
+    showToast(`Diseño "${chosenTmpl.theme.shortName}" seleccionado.`);
   };
 
   /* ---------- Reconocimiento de voz para profesores ---------- */
@@ -683,334 +690,11 @@ export default function WizardSteps({
               </div>
             </div>
 
-            {/* Selección de las 9 Plantillas Institucionales con Previsualización en Vivo */}
-            <div className="pt-5 border-t border-slate-100 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#8A1428]" />
-                    <span>Catálogo de 9 Plantillas de Diseño Institucional</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Pasa el cursor sobre cualquiera de las 9 plantillas para previsualizar en vivo el diseño con su paleta de colores y haz clic para seleccionarla para la generación.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-slate-500 font-medium">Plantilla elegida:</span>
-                  <span className="px-2.5 py-1 rounded-xl bg-[#8A1428] text-white text-xs font-bold shadow-xs">
-                    {getPresentationTemplate(spec.templateId).shortName}
-                  </span>
-                </div>
-              </div>
-
-              {/* Grid 2 Columnas: Lista de 9 Plantillas (Col 7) + Live Miniature Mockup (Col 5) */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                {/* 9 Plantillas Selector Grid */}
-                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[580px] overflow-y-auto pr-1">
-                  {H5P_PRESENTATION_TEMPLATES.map((tmpl) => {
-                    const isSelected = (spec.templateId || "plantilla-1") === tmpl.id;
-                    const isHovered = hoveredTemplateId === tmpl.id;
-
-                    return (
-                      <div
-                        key={tmpl.id}
-                        onClick={() => handleSelectTemplate(tmpl.id)}
-                        onMouseEnter={() => setHoveredTemplateId(tmpl.id)}
-                        onMouseLeave={() => setHoveredTemplateId(null)}
-                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between text-left ${
-                          isSelected
-                            ? "bg-rose-50/50 border-[#8A1428] shadow-md ring-2 ring-[#8A1428]/25"
-                            : isHovered
-                            ? "bg-slate-50 border-slate-300 shadow-sm"
-                            : "bg-white border-slate-200/90 hover:border-slate-300"
-                        }`}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between gap-1">
-                            <span
-                              className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider text-white"
-                              style={{ backgroundColor: tmpl.colors.primary }}
-                            >
-                              Plantilla {tmpl.templateNumber}
-                            </span>
-                            {isSelected ? (
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
-                                <Check className="w-3 h-3" />
-                                <span>Seleccionada</span>
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 font-medium">
-                                {tmpl.category}
-                              </span>
-                            )}
-                          </div>
-
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-900 leading-snug">
-                              {tmpl.shortName}
-                            </h4>
-                            <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                              {tmpl.description}
-                            </p>
-                          </div>
-
-                          {/* Color Swatches */}
-                          <div className="flex items-center gap-2 pt-1">
-                            <div className="flex items-center gap-1.5">
-                              <div
-                                className="w-4 h-4 rounded-full border border-black/10 shadow-xs"
-                                style={{ backgroundColor: tmpl.colors.primary }}
-                                title={`Color Primario: ${tmpl.colors.primary}`}
-                              />
-                              <div
-                                className="w-4 h-4 rounded-full border border-black/10 shadow-xs"
-                                style={{ backgroundColor: tmpl.colors.accent }}
-                                title={`Color Acento: ${tmpl.colors.accent}`}
-                              />
-                              <div
-                                className="w-4 h-4 rounded-full border border-black/10 shadow-xs"
-                                style={{ backgroundColor: tmpl.colors.background }}
-                                title={`Fondo: ${tmpl.colors.background}`}
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-medium capitalize">
-                              {tmpl.recommendedFont.replace("_", " ")}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
-                            {isSelected ? "Activa para compilar" : "Clic para seleccionar"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectTemplate(tmpl.id);
-                            }}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                              isSelected
-                                ? "bg-[#8A1428] text-white"
-                                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                            }`}
-                          >
-                            {isSelected ? "Elegida" : "Seleccionar"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Right Column: Live Miniature Mockup */}
-                <div className="lg:col-span-5 sticky top-4">
-                  {(() => {
-                    const activePreviewTemplate = getPresentationTemplate(
-                      hoveredTemplateId || spec.templateId || "plantilla-1"
-                    );
-                    const isHoverPreview =
-                      Boolean(hoveredTemplateId) &&
-                      hoveredTemplateId !== (spec.templateId || "plantilla-1");
-
-                    return (
-                      <div className="bg-slate-50/80 border border-slate-200 rounded-3xl p-4 shadow-sm space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: activePreviewTemplate.colors.accent }}
-                            />
-                            <span className="text-xs font-bold text-slate-900">
-                              Vista Previa en Vivo: {activePreviewTemplate.shortName}
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                            Plantilla {activePreviewTemplate.templateNumber}
-                          </span>
-                        </div>
-
-                        {/* 16:9 Realistic Miniature Slide Mockup */}
-                        <div
-                          className="aspect-video w-full rounded-2xl overflow-hidden shadow-md border relative flex flex-col justify-between p-3.5 transition-all duration-300"
-                          style={{
-                            backgroundColor: activePreviewTemplate.colors.background,
-                            borderColor: activePreviewTemplate.colors.cardBorder,
-                          }}
-                        >
-                          {/* Top Institutional Header Accent Stripe */}
-                          <div
-                            className="absolute top-0 left-0 right-0 h-1.5"
-                            style={{
-                              background: `linear-gradient(90deg, ${activePreviewTemplate.colors.primary} 0%, ${activePreviewTemplate.colors.accent} 100%)`,
-                            }}
-                          />
-
-                          {/* Slide Header */}
-                          <div className="space-y-0.5">
-                            <div
-                              className="text-[8px] uppercase font-bold tracking-widest flex items-center gap-1.5"
-                              style={{ color: activePreviewTemplate.colors.accent }}
-                            >
-                              <span>Campus Digital UAO</span>
-                              <span>•</span>
-                              <span>{spec.courseName || "Ingeniería y Ciencias"}</span>
-                            </div>
-                            <h4
-                              className="text-xs sm:text-sm font-black tracking-tight leading-snug line-clamp-1"
-                              style={{ color: activePreviewTemplate.colors.textPrimary }}
-                            >
-                              <span>{spec.title ? spec.title.split(" ").slice(0, 3).join(" ") : "Representación Discreta"} </span>
-                              <span style={{ color: activePreviewTemplate.colors.accent }}>
-                                {spec.title && spec.title.split(" ").length > 3
-                                  ? spec.title.split(" ").slice(3).join(" ")
-                                  : "y Código Digital"}
-                              </span>
-                            </h4>
-                            <div
-                              className="text-[8px] font-medium"
-                              style={{ color: activePreviewTemplate.colors.textMuted }}
-                            >
-                              Actividad {spec.activityNumber} • {spec.moduleName || "Módulo 1: Fundamentos"}
-                            </div>
-                          </div>
-
-                          {/* Slide Body: 2 Micro-Cards Mockup */}
-                          <div className="grid grid-cols-2 gap-2 my-auto">
-                            {/* Left Micro-Card */}
-                            <div
-                              className="p-2 rounded-xl border flex flex-col justify-between shadow-2xs"
-                              style={{
-                                backgroundColor: activePreviewTemplate.colors.cardBg,
-                                borderColor: activePreviewTemplate.colors.cardBorder,
-                              }}
-                            >
-                              <p
-                                className="text-[8px] leading-tight line-clamp-3"
-                                style={{ color: activePreviewTemplate.colors.textPrimary }}
-                              >
-                                Estructura conceptual y formalización matemática para la representación de datos continuos en sistemas digitales.
-                              </p>
-                              <div
-                                className="mt-1 p-1 rounded text-[7px] font-medium line-clamp-2"
-                                style={{
-                                  backgroundColor: activePreviewTemplate.colors.highlightBg,
-                                  color: activePreviewTemplate.colors.textPrimary,
-                                  borderLeft: `2.5px solid ${activePreviewTemplate.colors.accent}`,
-                                }}
-                              >
-                                Nota pedagógica: Contraste normativo y cero desbordamiento.
-                              </div>
-                            </div>
-
-                            {/* Right Micro-Card: Interactive Activity */}
-                            <div
-                              className="p-2 rounded-xl border flex flex-col justify-between shadow-2xs"
-                              style={{
-                                backgroundColor: activePreviewTemplate.colors.cardBg,
-                                borderColor: activePreviewTemplate.colors.cardBorder,
-                              }}
-                            >
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between">
-                                  <span
-                                    className="px-1 py-0.2 rounded text-[7px] font-bold uppercase tracking-wider text-white"
-                                    style={{ backgroundColor: activePreviewTemplate.colors.primary }}
-                                  >
-                                    Interactivo
-                                  </span>
-                                  <span
-                                    className="text-[7px] font-semibold"
-                                    style={{ color: activePreviewTemplate.colors.accent }}
-                                  >
-                                    1.0 / 1.0 pts
-                                  </span>
-                                </div>
-                                <div
-                                  className="text-[8px] font-bold line-clamp-1"
-                                  style={{ color: activePreviewTemplate.colors.textPrimary }}
-                                >
-                                  ¿Estándar para punto flotante?
-                                </div>
-                              </div>
-
-                              <div className="space-y-0.5 mt-1">
-                                <div
-                                  className="px-1.5 py-0.5 rounded text-[7px] font-bold text-white flex items-center justify-between"
-                                  style={{ backgroundColor: activePreviewTemplate.colors.accent }}
-                                >
-                                  <span>IEEE-754 (32/64 bits)</span>
-                                  <Check className="w-2.5 h-2.5 text-white" />
-                                </div>
-                                <div
-                                  className="px-1.5 py-0.5 rounded text-[7px] border text-slate-600"
-                                  style={{
-                                    backgroundColor: activePreviewTemplate.colors.background,
-                                    borderColor: activePreviewTemplate.colors.cardBorder,
-                                  }}
-                                >
-                                  <span>ASCII Extendido</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Slide Footer */}
-                          <div className="flex items-center justify-between pt-1 border-t border-black/5">
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className="w-1.5 h-1.5 rounded-full"
-                                style={{ backgroundColor: activePreviewTemplate.colors.primary }}
-                              />
-                              <span
-                                className="text-[7px] font-bold"
-                                style={{ color: activePreviewTemplate.colors.textMuted }}
-                              >
-                                Plantilla {activePreviewTemplate.templateNumber} de 9
-                              </span>
-                            </div>
-                            <div
-                              className="px-2 py-0.5 rounded text-[7px] font-bold text-white flex items-center gap-1"
-                              style={{ backgroundColor: activePreviewTemplate.colors.accent }}
-                            >
-                              <span>Siguiente</span>
-                              <ArrowRight className="w-2 h-2" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Live Preview Info & Action Button */}
-                        <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                          <div className="text-[11px]">
-                            {isHoverPreview ? (
-                              <span className="text-amber-700 font-medium">
-                                Previsualizando al pasar el cursor
-                              </span>
-                            ) : (
-                              <span className="text-emerald-700 font-bold flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                Plantilla activa para compilar
-                              </span>
-                            )}
-                          </div>
-
-                          {isHoverPreview && (
-                            <button
-                              type="button"
-                              onClick={() => handleSelectTemplate(activePreviewTemplate.id)}
-                              className="px-3 py-1 rounded-xl bg-[#8A1428] hover:bg-[#6F1020] text-white text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
-                            >
-                              <span>Activar Plantilla</span>
-                              <ArrowRight className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
+            <PresentationTemplateGallery
+              key={spec.id}
+              selectedTemplateId={spec.selectedTemplateId}
+              onSelect={handleSelectTemplate}
+            />
 
             {/* Prompt & STT Dictation Box */}
             <div className="pt-4 border-t border-slate-100 space-y-3">
@@ -1686,7 +1370,9 @@ export default function WizardSteps({
 
                   {/* Banner de Diseño Global Activo */}
                   {(() => {
-                    const activeDesign = getPresentationTemplate(spec.templateId);
+                    const activeDesign =
+                      getUaoTemplate(spec.selectedTemplateId)?.theme ||
+                      getPresentationTemplate(spec.templateId);
                     return (
                       <div className="p-3 bg-slate-50 border border-slate-200/90 rounded-2xl flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2.5">

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { HasProfile, HasProjectRecord, HasUsageLog } from "@/lib/supabase";
+import { getUaoTemplate } from "@/lib/uao-template-catalog";
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -191,7 +192,28 @@ export async function checkAndLogRateLimit(params: {
   };
 }
 
-export async function loadH5pTemplateBuffer(): Promise<Buffer> {
+export async function loadH5pTemplateBuffer(selectedTemplateId?: string): Promise<Buffer> {
+  const selectedTemplate = getUaoTemplate(selectedTemplateId);
+  if (selectedTemplateId && !selectedTemplate) {
+    throw new Error("El diseño solicitado no pertenece al catálogo UAO.");
+  }
+
+  if (selectedTemplate?.h5pStoragePath) {
+    const { data, error } = await getSupabaseAdmin()
+      .storage.from(H5P_STORAGE_BUCKET)
+      .download(selectedTemplate.h5pStoragePath);
+    if (error || !data) {
+      throw new Error(
+        `No se pudo cargar la base H5P privada ${selectedTemplate.id}: ${error?.message || "archivo no encontrado"}`
+      );
+    }
+    const buffer = Buffer.from(await data.arrayBuffer());
+    if (buffer.length === 0 || buffer.length > 50 * 1024 * 1024) {
+      throw new Error("La base H5P seleccionada está vacía o supera el límite permitido.");
+    }
+    return buffer;
+  }
+
   const explicitPath = process.env.PH5P_TEMPLATE_PATH;
   const candidates = [
     explicitPath,
@@ -264,4 +286,3 @@ export async function downloadH5pPackageFromSupabase(
   }
   return buffer;
 }
-

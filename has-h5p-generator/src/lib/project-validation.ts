@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { H5P_FONT_OPTIONS } from "./h5p-catalog";
+import { isUaoTemplateId } from "./uao-template-catalog";
 import type { HasProjectSpec, HasSlideSpec, SlideInteractionSpec } from "./h5p-engine";
 
 const SAFE_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/;
@@ -299,6 +300,13 @@ export function validateProjectSpec(value: unknown): HasProjectSpec {
   }
   const templateId = cleanText(input.templateId ?? "plantilla-1", "templateId", 40);
   if (!ALLOWED_TEMPLATES.has(templateId)) throw new ProjectValidationError("La plantilla seleccionada no es válida.");
+  let selectedTemplateId: string | undefined;
+  if (input.selectedTemplateId !== undefined) {
+    selectedTemplateId = cleanText(input.selectedTemplateId, "selectedTemplateId", 40);
+    if (!isUaoTemplateId(selectedTemplateId)) {
+      throw new ProjectValidationError("El diseño seleccionado no pertenece al catálogo UAO.");
+    }
+  }
   const activityNumber = input.activityNumber === undefined ? 1 : input.activityNumber;
   if (!Number.isInteger(activityNumber) || activityNumber < 1 || activityNumber > 1_000) {
     throw new ProjectValidationError("activityNumber debe ser un entero entre 1 y 1.000.");
@@ -314,6 +322,7 @@ export function validateProjectSpec(value: unknown): HasProjectSpec {
     moduleName: requiredText(input.moduleName ?? "Módulo 1", "moduleName", 200),
     activityNumber,
     templateId,
+    ...(selectedTemplateId ? { selectedTemplateId } : {}),
     defaultVoice: cleanText(input.defaultVoice ?? "es-CO-SalomeNeural", "defaultVoice", 80),
     includeNavigationGuide: input.includeNavigationGuide ?? false,
     slides: input.slides.map(validateSlide),

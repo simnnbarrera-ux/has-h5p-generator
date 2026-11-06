@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Cargar plantilla base H5P
-    const templateBuffer = await loadH5pTemplateBuffer();
+    const templateBuffer = await loadH5pTemplateBuffer(workingSpec.selectedTemplateId);
 
     // 2. Sintetizar narración de audio si aplica
     const audioAssets = new Map<string, Buffer>();

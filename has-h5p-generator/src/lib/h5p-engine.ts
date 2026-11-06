@@ -12,6 +12,7 @@ import {
   getPresentationTemplate,
   findSlideLayout,
 } from "./h5p-catalog";
+import { getUaoTemplate } from "./uao-template-catalog";
 import {
   BUILTIN_RETO11_SVGS,
   generateCustomConceptSvg,
@@ -137,6 +138,7 @@ export interface HasProjectSpec {
   moduleName: string;
   activityNumber: number;
   templateId: string;
+  selectedTemplateId?: string;
   defaultVoice: string;
   fontFamily?: string;
   globalFontScale?: "compact" | "normal" | "large";
@@ -1256,9 +1258,11 @@ function compileSlideFromSpec(
   extraLibsNeeded: Set<string>,
   projectFontId?: string,
   projectFontScale?: "compact" | "normal" | "large",
-  projectTemplateId?: string
+  projectTemplateId?: string,
+  selectedTemplateId?: string
 ): any {
-  const tmpl = getPresentationTemplate(projectTemplateId);
+  const selectedTheme = getUaoTemplate(selectedTemplateId)?.theme;
+  const tmpl = selectedTheme || getPresentationTemplate(projectTemplateId);
   const colorPrimary = tmpl.colors.primary;
   const colorAccent = tmpl.colors.accent;
   const colorBackground = tmpl.colors.background;
@@ -2578,7 +2582,9 @@ export async function buildH5pPackageFromSpec(
         ]
       : spec.slides;
 
-  const templateConfig = getPresentationTemplate(spec.templateId);
+  const templateConfig =
+    getUaoTemplate(spec.selectedTemplateId)?.theme ||
+    getPresentationTemplate(spec.templateId);
 
   const compiledSlides = slidesToCompile.map((s, index) => {
     try {
@@ -2589,7 +2595,8 @@ export async function buildH5pPackageFromSpec(
         extraLibsNeeded,
         spec.fontFamily || templateConfig.recommendedFont,
         spec.globalFontScale,
-        spec.templateId
+        spec.templateId,
+        spec.selectedTemplateId
       );
     } catch (error) {
       const detail = error instanceof Error ? error.message : "error desconocido";

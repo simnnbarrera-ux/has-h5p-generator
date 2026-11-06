@@ -454,6 +454,7 @@ export default function StudioApp() {
                 moduleName: "Módulo 1",
                 activityNumber: projects.length + 1,
                 templateId: "plantilla-1",
+                selectedTemplateId: "facultad-1",
                 defaultVoice: profile.preferred_voice || "es-CO-SalomeNeural",
                 includeNavigationGuide: false,
                 slides: [

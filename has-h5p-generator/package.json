@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test src/lib/*.test.ts",
-    "migrate:packages": "node scripts/migrate-package-storage.js"
+    "migrate:packages": "node scripts/migrate-package-storage.js",
+    "upload:uao-template-bases": "node scripts/upload-uao-template-bases.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
