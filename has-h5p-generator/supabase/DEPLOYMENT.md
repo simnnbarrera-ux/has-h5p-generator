@@ -11,6 +11,7 @@ Aplicar en este orden, después de revisar cada SQL en el proyecto de destino:
 5. `005_versioned_private_packages.sql`
 
 La migración 003 restringe tablas y convierte `has-h5p-store` en privado; la 004 reserva cuotas de manera atómica; la 005 agrega `storage_path` sin borrar ni modificar los paquetes existentes.
+La tabla `storage.objects` es administrada por Supabase y ya tiene RLS habilitado; 003 no intenta cambiar su propiedad ni volver a ejecutar `ALTER TABLE ... ENABLE ROW LEVEL SECURITY`, que puede fallar con `42501` desde SQL Editor.
 
 En una instalación existente, consulta el historial de migraciones y aplica solo las pendientes; no vuelvas a ejecutar migraciones ya aplicadas. La eliminación de perfiles de prueba en 002 afecta instalaciones limpias y no borra perfiles existentes. Si se ejecutó una versión anterior de `scripts/seed-users.js`, revisa y restablece/deshabilita las cuentas de prueba creadas antes de habilitar el servicio públicamente.
 

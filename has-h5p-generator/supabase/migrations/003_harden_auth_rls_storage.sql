@@ -199,10 +199,9 @@ DROP POLICY IF EXISTS "Descarga publica de paquetes H5P" ON storage.objects;
 DROP POLICY IF EXISTS "Subida de paquetes H5P" ON storage.objects;
 DROP POLICY IF EXISTS "Actualizacion de paquetes H5P" ON storage.objects;
 
--- Asegura que, sin policies de cliente para este bucket, RLS sea el mecanismo
--- que deniega el acceso directo de anon/authenticated. No se revocan permisos
--- de storage.objects globalmente porque podrían corresponder a otros buckets.
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Supabase habilita RLS en storage.objects y administra esa tabla. No ejecutar
+-- ALTER TABLE aquí: el rol del SQL Editor puede no ser propietario y devolver
+-- 42501 aunque RLS ya esté activo. No se revocan permisos globales de la tabla.
 
 -- =============================================================================
 -- Fin de la migración 003
