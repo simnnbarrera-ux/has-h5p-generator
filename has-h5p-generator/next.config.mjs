@@ -22,6 +22,7 @@ const nextConfig = {
     '/api/h5p/build': [
       './node_modules/sharp/**/*',
       './node_modules/@img/**/*',
+      './fonts/**/*',
     ],
   },
   // Fallbacks solo para dependencias Node que no deben entrar al bundle cliente.

@@ -1,3 +1,4 @@
+import "@/lib/fontconfig-init";
 import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { getRequestUser, getTrustedClientIp } from "@/lib/api-auth";

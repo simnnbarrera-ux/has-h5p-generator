@@ -55,7 +55,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <circle cx="105" cy="58" r="32" fill="#E0F3FA"/>
     <text x="105" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#8A1428">01</text>
     <text x="105" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#0B0F19">Foro Social</text>
-    <text x="105" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">Preséntate en texto,</text>
+    <text x="105" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">Presentate en texto,</text>
     <text x="105" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">audio, imagen o video</text>
     <text x="105" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">y conecta con tu equipo.</text>
     <rect x="35" y="214" width="140" height="28" rx="14" fill="#8A1428"/>
@@ -68,27 +68,27 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <text x="105" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#0099E6">02</text>
     <text x="105" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#0B0F19">Explora tu Ruta</text>
     <text x="105" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">Revisa anuncios, proceso</text>
-    <text x="105" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">evaluativo y los 4 módulos</text>
+    <text x="105" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">evaluativo y los 4 modulos</text>
     <text x="105" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">del ambiente virtual.</text>
     <rect x="35" y="214" width="140" height="28" rx="14" fill="#0099E6"/>
-    <text x="105" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">Navegación Activa</text>
+    <text x="105" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">Navegacion Activa</text>
   </g>
 
   <g transform="translate(535, 155)">
     <rect width="210" height="260" rx="18" fill="#FFFFFF" stroke="#8A1428" stroke-width="3"/>
     <circle cx="105" cy="58" r="32" fill="#E0F3FA"/>
     <text x="105" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#8A1428">03</text>
-    <text x="105" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#0B0F19">Encuentro Sincrónico</text>
-    <text x="105" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">Participa en la sesión</text>
+    <text x="105" y="122" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#0B0F19">Encuentro Sincronico</text>
+    <text x="105" y="152" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">Participa en la sesion</text>
     <text x="105" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">en vivo para despejar dudas</text>
     <text x="105" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#334155">e iniciar el Reto 1.</text>
     <rect x="35" y="214" width="140" height="28" rx="14" fill="#1D5CFF"/>
-    <text x="105" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">Acompañamiento</text>
+    <text x="105" y="233" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">Acompanamiento</text>
   </g>
 
   <rect x="55" y="455" width="690" height="105" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
-  <text x="400" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#8A1428">Competencia Cuantitativa y Pensamiento Lógico-Matemático</text>
-  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">Integrar modelos discretos y algoritmos computacionales en escenarios reales de Ingeniería de Datos y Multimedia.</text>
+  <text x="400" y="492" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#8A1428">Competencia Cuantitativa y Pensamiento Logico-Matematico</text>
+  <text x="400" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">Integrar modelos discretos y algoritmos computacionales en escenarios reales de Ingenieria de Datos y Multimedia.</text>
   <text x="400" y="544" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#0099E6">01010101 01000001 01001111  ->  "UAO"  |  IEEE-754 (32 & 64 bits)</text>
 </svg>`,
   },
@@ -107,14 +107,14 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">ESTANDAR IEEE-754: ARITMETICA DE PUNTO FLOTANTE EN MAQUINA</text>
   <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Del conjunto infinito de los reales (R) a una representacion finita de 32 y 64 bits</text>
 
-  <!-- Fórmula Matemática Renderizada en Vector (Reemplaza MathDisplay) -->
+  <!-- Formula Matematica Renderizada en Vector (Reemplaza MathDisplay) -->
   <rect x="24" y="108" width="812" height="86" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="430" y="136" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#8A1428">MODELO MATEMATICO DE NORMALIZACION EN BASE 2</text>
   <text x="430" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#0B0F19">
     x = (-1)^s  x  (1 . b1 b2 b3 ... bm)_bin  x  2^(E - Bias)
   </text>
 
-  <!-- Precisión Simple 32 Bits -->
+  <!-- Precision Simple 32 Bits -->
   <g transform="translate(24, 214)">
     <rect width="812" height="155" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
     <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">1. Precision Simple (binary32 - 32 bits / 4 bytes) | Sesgo (Bias) = 127</text>
@@ -137,7 +137,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <text x="24" y="138" font-family="monospace" font-size="13" font-weight="bold" fill="#334155">Ejemplo (-12.5)_dec = -1100.1_bin = -1.1001_bin x 2^3 -> S=1 | E=130 (10000010_bin) | M=1001000...0_bin</text>
   </g>
 
-  <!-- Precisión Doble 64 Bits -->
+  <!-- Precision Doble 64 Bits -->
   <g transform="translate(24, 386)">
     <rect width="812" height="168" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
     <text x="24" y="32" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#0B0F19">2. Precision Doble (binary64 - 64 bits / 8 bytes) | Sesgo (Bias) = 1023</text>
@@ -155,7 +155,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     <text x="596" y="98" text-anchor="middle" font-family="monospace" font-size="14" fill="#0099E6">52 bits [b51 ... b0] (15-17 digitos dec.)</text>
 
     <text x="24" y="140" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">Nota clave:</text>
-    <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de números racionales diádicos (k / 2^n) tiene representación exacta en punto flotante.</text>
+    <text x="105" y="140" font-family="Arial, sans-serif" font-size="13" fill="#334155">Solo un subconjunto finito de numeros racionales diadicos (k / 2^n) tiene representacion exacta en punto flotante.</text>
   </g>
 </svg>`,
   },
@@ -174,7 +174,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <text x="48" y="52" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#FFFFFF">PASO 2: LA MAQUINA DE TURING Y LENGUAJES FORMALES</text>
   <text x="48" y="76" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">Abstraccion matematica del procesamiento algoritmico y manipulacion de simbolos</text>
 
-  <!-- Definición formal 7-tupla -->
+  <!-- Definicion formal 7-tupla -->
   <rect x="24" y="110" width="812" height="70" rx="12" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
   <text x="430" y="138" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#0B0F19">
     M = ( Q, Sigma, Gamma, delta, q0, B, F )   donde   delta : Q x Gamma -> Q x Gamma x { L, R }
@@ -266,7 +266,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <rect x="556" y="156" width="238" height="334" rx="16" fill="#FFF7ED" stroke="#FE9800" stroke-width="3"/>
   <text x="675" y="192" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="#9A3412">I - Irracionales</text>
   <text x="675" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">No pueden expresarse</text>
-  <text x="675" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">como fracción a/b.</text>
+  <text x="675" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#7C2D12">como fraccion a/b.</text>
   <text x="675" y="276" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">pi ~ 3.14159265...</text>
   <text x="675" y="308" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">sqrt(2) ~ 1.41421356...</text>
   <text x="675" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#8A1428">e ~ 2.71828182...</text>
@@ -295,7 +295,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
   <g transform="translate(24, 110)">
     <rect width="812" height="260" rx="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2"/>
     <rect width="812" height="46" rx="14" fill="#0B0F19"/>
-    <text x="90" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">CARÁCTER</text>
+    <text x="90" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">CARACTER</text>
     <text x="240" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#0099E6">DECIMAL (DEC)</text>
     <text x="410" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#E0F3FA">HEXADECIMAL (HEX)</text>
     <text x="640" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FE9800">BINARIO (1 BYTE = 8 BITS)</text>
@@ -331,7 +331,7 @@ export const BUILTIN_RETO11_SVGS: Record<string, GeneratedSvgAsset> = {
     [ 2^7=128 | 2^6=64 | 2^5=32 | 2^4=16 | 2^3=8 | 2^2=4 | 2^1=2 | 2^0=1 ]
   </text>
   <text x="430" y="488" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#334155">
-    Proceso inverso: agrupar la cadena binaria en bloques de 8 bits, sumar las potencias activas y mapear al carácter ASCII.
+    Proceso inverso: agrupar la cadena binaria en bloques de 8 bits, sumar las potencias activas y mapear al caracter ASCII.
   </text>
 </svg>`,
   },
@@ -395,7 +395,7 @@ export function generateCustomConceptSvg(params: {
   <text x="48" y="54" font-family="Arial, sans-serif" font-size="21" font-weight="bold" fill="#FFFFFF">${safeTitle}</text>
   <text x="48" y="80" font-family="Arial, sans-serif" font-size="14" fill="#E0F3FA">${safeSub}</text>
   <rect x="24" y="114" width="792" height="82" rx="14" fill="#E0F3FA" stroke="#0099E6" stroke-width="2"/>
-  <text x="420" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">ESQUEMA SINTÉTICO INSTITUCIONAL UAO</text>
+  <text x="420" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#8A1428">ESQUEMA SINTETICO INSTITUCIONAL UAO</text>
   <text x="420" y="174" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#0B0F19">${safeFormula}</text>
   ${cardsXml}
 </svg>`;
