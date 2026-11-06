@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   Sparkles,
@@ -25,6 +25,7 @@ import {
 import { HasProjectSpec, resolveFontCssStack } from "@/lib/h5p-engine";
 import { H5P_FONT_OPTIONS } from "@/lib/h5p-catalog";
 import { apiFetch } from "@/lib/api-client";
+import { createDemoProfile, type DemoProfileName } from "@/lib/demo-mode";
 
 const EMPTY_PROFILE: HasProfile = {
   email: "",
@@ -49,7 +50,10 @@ export default function StudioApp() {
   );
   const [profile, setProfile] = useState<HasProfile>(EMPTY_PROFILE);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const demoModeRef = useRef(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const hasStudioAccess = isAuthenticated || isDemoMode;
 
   // Projects list
   const [projects, setProjects] = useState<HasProjectRecord[]>([]);
@@ -75,6 +79,7 @@ export default function StudioApp() {
   const [previewIsPublicDemo, setPreviewIsPublicDemo] = useState(false);
 
   const refreshAuthenticatedProjects = async () => {
+    if (demoModeRef.current) return;
     const response = await apiFetch("/api/projects");
     const data: {
       profile?: HasProfile;
@@ -94,6 +99,18 @@ export default function StudioApp() {
     setProjects(Array.isArray(data.projects) ? data.projects : []);
   };
 
+  const startDemoProfile = (name: DemoProfileName) => {
+    demoModeRef.current = true;
+    setIsDemoMode(true);
+    setIsAuthenticated(false);
+    setProfile(createDemoProfile(name));
+    setProjects(getPublicSeedProjects());
+    setLoadingProjects(false);
+    setCompilationResult(null);
+    setActiveView("dashboard");
+    setIsAuthModalOpen(false);
+  };
+
   // El cliente anónimo solo usa seeds locales; los proyectos privados requieren sesión.
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +119,7 @@ export default function StudioApp() {
       setLoadingProjects(true);
       try {
         const { data: sessionData } = await supabasePublic.auth.getSession();
+        if (cancelled || demoModeRef.current) return;
         if (sessionData.session?.user) {
           await refreshAuthenticatedProjects();
           if (!cancelled) setIsAuthenticated(true);
@@ -133,6 +151,10 @@ export default function StudioApp() {
 
   // Open project in Wizard
   const handleOpenProjectInWizard = (projectId: string) => {
+    if (demoModeRef.current) {
+      handleOpenPreviewModal(projectId, "player", true);
+      return;
+    }
     const found = projects.find((p) => p.id === projectId);
     if (found && found.project_spec) {
       setWorkingSpec(found.project_spec);
@@ -185,6 +207,7 @@ export default function StudioApp() {
   const handleCompilePackage = async (
     overrideSpec?: HasProjectSpec
   ): Promise<any> => {
+    if (demoModeRef.current) return null;
     setCompiling(true);
     const targetSpec = overrideSpec || workingSpec;
     try {
@@ -223,7 +246,9 @@ export default function StudioApp() {
 
   // Logout
   const handleLogout = async () => {
-    await supabasePublic.auth.signOut();
+    if (!demoModeRef.current) await supabasePublic.auth.signOut();
+    demoModeRef.current = false;
+    setIsDemoMode(false);
     setIsAuthenticated(false);
     setProfile(EMPTY_PROFILE);
     setProjects(getPublicSeedProjects());
@@ -264,7 +289,7 @@ export default function StudioApp() {
           </div>
 
           {/* View Navigation Switcher (Only visible when authenticated) */}
-          {isAuthenticated && (
+          {hasStudioAccess && (
             <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
@@ -292,18 +317,20 @@ export default function StudioApp() {
                   {projects.length}
                 </span>
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveView("wizard")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
-                  activeView === "wizard"
-                    ? "bg-[#8A1428] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Estudio Wizard</span>
-              </button>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => setActiveView("wizard")}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
+                    activeView === "wizard"
+                      ? "bg-[#8A1428] text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Estudio Wizard</span>
+                </button>
+              )}
             </nav>
           )}
 
@@ -331,7 +358,7 @@ export default function StudioApp() {
             )}
 
             {/* Profile / Auth Button */}
-            {isAuthenticated ? (
+            {hasStudioAccess ? (
               <div className="flex items-center gap-2">
                 <div
                   onClick={() => setActiveView("dashboard")}
@@ -364,7 +391,7 @@ export default function StudioApp() {
       </header>
 
       {/* Mobile Subnav (Only visible when authenticated) */}
-      {isAuthenticated && (
+      {hasStudioAccess && (
         <div className="md:hidden flex items-center justify-around bg-white border-b border-slate-200 p-2 text-xs font-semibold">
           <button
             type="button"
@@ -384,15 +411,17 @@ export default function StudioApp() {
           >
             Mis Recursos ({projects.length})
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveView("wizard")}
-            className={`py-1 px-3 rounded-lg ${
-              activeView === "wizard" ? "bg-[#8A1428] text-white" : "text-slate-600"
-            }`}
-          >
-            Wizard
-          </button>
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={() => setActiveView("wizard")}
+              className={`py-1 px-3 rounded-lg ${
+                activeView === "wizard" ? "bg-[#8A1428] text-white" : "text-slate-600"
+              }`}
+            >
+              Wizard
+            </button>
+          )}
         </div>
       )}
 
@@ -401,6 +430,10 @@ export default function StudioApp() {
         {activeView === "landing" && (
           <LandingView
             onStartWizard={() => {
+              if (isDemoMode) {
+                setActiveView("dashboard");
+                return;
+              }
               if (!isAuthenticated) {
                 setIsAuthModalOpen(true);
               } else {
@@ -408,6 +441,10 @@ export default function StudioApp() {
               }
             }}
             onOpenProject={(id) => {
+              if (isDemoMode) {
+                handleOpenPreviewModal(id, "player", true);
+                return;
+              }
               if (!isAuthenticated) {
                 setIsAuthModalOpen(true);
               } else {
@@ -416,7 +453,8 @@ export default function StudioApp() {
             }}
             onPreviewDemo={(id) => handleOpenPreviewModal(id, "player", true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
-            userEmail={isAuthenticated ? profile.email : undefined}
+            userEmail={hasStudioAccess ? profile.email : undefined}
+            isDemoMode={isDemoMode}
           />
         )}
 
@@ -425,8 +463,10 @@ export default function StudioApp() {
               projects={projects}
               profile={profile}
               isLoading={loadingProjects}
+              readOnly={isDemoMode}
             onOpenProject={(id) => handleOpenProjectInWizard(id)}
             onNewProject={() => {
+              if (isDemoMode) return;
               setWorkingSpec({
                 id: `actividad-nueva-${Date.now().toString().slice(-4)}`,
                 title: "Nueva Actividad Interactiva",
@@ -452,13 +492,13 @@ export default function StudioApp() {
               });
               setActiveView("wizard");
             }}
-            onPreviewProject={(id) => handleOpenPreviewModal(id, "player")}
-            onViewPh5p={(p) => handleOpenPreviewModal(p.id, "python")}
-            onViewMoodle={(p) => handleOpenPreviewModal(p.id, "moodle")}
+            onPreviewProject={(id) => handleOpenPreviewModal(id, "player", isDemoMode)}
+            onViewPh5p={(p) => handleOpenPreviewModal(p.id, "python", isDemoMode)}
+            onViewMoodle={(p) => handleOpenPreviewModal(p.id, "moodle", isDemoMode)}
           />
         )}
 
-        {activeView === "wizard" && (
+        {activeView === "wizard" && isAuthenticated && (
           <WizardSteps
             spec={workingSpec}
             setSpec={setWorkingSpec}
@@ -506,6 +546,8 @@ export default function StudioApp() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={(newProf) => {
+          demoModeRef.current = false;
+          setIsDemoMode(false);
           setProfile(newProf);
           setIsAuthenticated(true);
           setProjects([]);
@@ -513,6 +555,7 @@ export default function StudioApp() {
             setProjects([]);
           });
         }}
+        onDemoAccess={startDemoProfile}
       />
 
       {/* Preview & Code Modal */}
@@ -522,6 +565,7 @@ export default function StudioApp() {
         project={previewProject}
         initialTab={previewTab}
         isPublicDemo={previewIsPublicDemo}
+        isReadOnly={isDemoMode}
       />
     </div>
   );

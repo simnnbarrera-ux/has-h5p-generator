@@ -21,6 +21,7 @@ interface H5pPreviewModalProps {
   project: HasProjectRecord | null;
   initialTab?: "player" | "python" | "moodle";
   isPublicDemo?: boolean;
+  isReadOnly?: boolean;
 }
 
 export default function H5pPreviewModal({
@@ -29,6 +30,7 @@ export default function H5pPreviewModal({
   project,
   initialTab = "player",
   isPublicDemo = false,
+  isReadOnly = false,
 }: H5pPreviewModalProps) {
   const projectId = project?.id || "";
   const sessionKey = `${isOpen ? "open" : "closed"}:${projectId}:${initialTab}:${isPublicDemo}`;
@@ -204,14 +206,16 @@ export default function H5pPreviewModal({
 
           {/* Close & Download (Desktop) */}
           <div className="hidden sm:flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="px-3 py-1.5 rounded-lg bg-[#8A1428] hover:bg-[#6F1020] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Descargar .h5p</span>
-            </button>
+            {!isReadOnly && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="px-3 py-1.5 rounded-lg bg-[#8A1428] hover:bg-[#6F1020] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Descargar .h5p</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -311,16 +315,18 @@ export default function H5pPreviewModal({
         </div>
 
         {/* Mobile Download Footer */}
-        <div className="sm:hidden p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="w-full py-2 rounded-xl bg-[#8A1428] hover:bg-[#6F1020] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Descargar paquete .h5p</span>
-          </button>
-        </div>
+        {!isReadOnly && (
+          <div className="sm:hidden p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="w-full py-2 rounded-xl bg-[#8A1428] hover:bg-[#6F1020] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Descargar paquete .h5p</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

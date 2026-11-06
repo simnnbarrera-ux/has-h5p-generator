@@ -14,11 +14,13 @@ import {
 } from "lucide-react";
 import { supabasePublic, HasProfile } from "@/lib/supabase";
 import { apiFetch } from "@/lib/api-client";
+import { DEMO_PROFILE_NAMES, type DemoProfileName } from "@/lib/demo-mode";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAuthSuccess: (profile: HasProfile) => void;
+  onDemoAccess: (name: DemoProfileName) => void;
 }
 
 async function loadAuthenticatedProfile(): Promise<HasProfile> {
@@ -42,6 +44,7 @@ export default function AuthModal({
   isOpen,
   onClose,
   onAuthSuccess,
+  onDemoAccess,
 }: AuthModalProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -254,6 +257,35 @@ export default function AuthModal({
               )}
             </button>
           </form>
+
+          {mode === "login" && (
+            <section className="pt-3 border-t border-slate-200 space-y-2.5" aria-labelledby="demo-profiles-title">
+              <div>
+                <h3 id="demo-profiles-title" className="text-xs font-bold text-slate-800">
+                  Explorar sin cuenta
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Elige un perfil ficticio para ver muestras públicas en modo de solo lectura.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {DEMO_PROFILE_NAMES.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => onDemoAccess(name)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:border-rose-200 text-xs font-semibold text-slate-700 hover:text-[#8A1428] transition"
+                  >
+                    {name}
+                    <span className="block text-[9px] font-medium text-slate-400">Demo · solo lectura</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                No crea una cuenta ni permite generar, editar o guardar recursos.
+              </p>
+            </section>
+          )}
 
           <div className="text-center pt-1">
             <button

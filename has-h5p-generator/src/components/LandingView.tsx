@@ -25,6 +25,7 @@ interface LandingViewProps {
   onPreviewDemo?: (projectId: string) => void;
   onOpenAuth: () => void;
   userEmail?: string;
+  isDemoMode?: boolean;
 }
 
 export default function LandingView({
@@ -33,6 +34,7 @@ export default function LandingView({
   onPreviewDemo,
   onOpenAuth,
   userEmail,
+  isDemoMode = false,
 }: LandingViewProps) {
   return (
     <div className="space-y-16 pb-12">
@@ -89,7 +91,7 @@ export default function LandingView({
                 onClick={onStartWizard}
                 className="px-6 py-3 rounded-xl bg-[#8A1428] hover:bg-[#6F1020] text-white font-semibold text-xs md:text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 group"
               >
-                <span>Crear Recurso H5P (Wizard)</span>
+                <span>{isDemoMode ? "Explorar recursos de demostración" : "Crear Recurso H5P (Wizard)"}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
 
@@ -359,11 +361,12 @@ export default function LandingView({
             Digitatón UAO 2026 · Equipo 36
           </div>
           <h2 className="text-xl md:text-3xl font-extrabold">
-            ¿Listo para crear un nuevo recurso H5P?
+            {isDemoMode ? "Explora recursos educativos de ejemplo" : "¿Listo para crear un nuevo recurso H5P?"}
           </h2>
           <p className="text-xs md:text-sm text-rose-100/90 max-w-xl">
-            Inicia el Wizard guiado paso a paso y transforma un texto o bosquejo
-            en una presentación interactiva profesional para tu curso.
+            {isDemoMode
+              ? "La demo permite revisar muestras públicas, sin crear cuentas ni modificar recursos."
+              : "Inicia el Wizard guiado paso a paso y transforma un texto o bosquejo en una presentación interactiva profesional para tu curso."}
           </p>
         </div>
 
@@ -372,7 +375,7 @@ export default function LandingView({
           onClick={onStartWizard}
           className="px-6 py-3.5 rounded-xl bg-white text-[#8A1428] hover:bg-rose-50 font-bold text-xs md:text-sm shadow-lg transition flex items-center gap-2 shrink-0"
         >
-          <span>Iniciar Wizard de Co-creación</span>
+          <span>{isDemoMode ? "Ver recursos de muestra" : "Iniciar Wizard de Co-creación"}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </section>
