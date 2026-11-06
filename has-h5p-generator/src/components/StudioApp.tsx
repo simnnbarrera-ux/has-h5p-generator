@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   Sparkles,
@@ -26,6 +26,7 @@ import { HasProjectSpec, resolveFontCssStack } from "@/lib/h5p-engine";
 import { H5P_FONT_OPTIONS } from "@/lib/h5p-catalog";
 import { apiFetch } from "@/lib/api-client";
 import { createDemoProfile, type DemoProfileName } from "@/lib/demo-mode";
+import { formatStudioRoute, parseStudioRoute, type StudioRoute, type StudioStep, type StudioView } from "@/lib/studio-route";
 
 const EMPTY_PROFILE: HasProfile = {
   email: "",
@@ -45,9 +46,10 @@ function getPublicSeedProjects(): HasProjectRecord[] {
 }
 
 export default function StudioApp() {
-  const [activeView, setActiveView] = useState<"landing" | "dashboard" | "wizard">(
-    "landing"
-  );
+  const [activeView, setActiveView] = useState<StudioView>("landing");
+  const [wizardStep, setWizardStep] = useState<StudioStep>(1);
+  const [routeProjectId, setRouteProjectId] = useState<string | undefined>();
+  const routeRef = useRef<StudioRoute>({ view: "landing", step: 1 });
   const [profile, setProfile] = useState<HasProfile>(EMPTY_PROFILE);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -78,8 +80,38 @@ export default function StudioApp() {
   );
   const [previewIsPublicDemo, setPreviewIsPublicDemo] = useState(false);
 
-  const refreshAuthenticatedProjects = async () => {
-    if (demoModeRef.current) return;
+  const navigateToRoute = useCallback((route: StudioRoute, replace = false) => {
+    const target = formatStudioRoute(route);
+    if (`${window.location.pathname}${window.location.search}` !== target) {
+      window.history[replace ? "replaceState" : "pushState"]({ hasH5pRoute: true }, "", target);
+    }
+    routeRef.current = route;
+    setActiveView(route.view);
+    setWizardStep(route.step);
+    setRouteProjectId(route.projectId);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
+  useEffect(() => {
+    const syncRouteFromLocation = () => {
+      const route = parseStudioRoute(window.location.pathname, window.location.search);
+      const canonical = formatStudioRoute(route);
+      if (`${window.location.pathname}${window.location.search}` !== canonical) {
+        window.history.replaceState({ hasH5pRoute: true }, "", canonical);
+      }
+      routeRef.current = route;
+      setActiveView(route.view);
+      setWizardStep(route.step);
+      setRouteProjectId(route.projectId);
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+    syncRouteFromLocation();
+    window.addEventListener("popstate", syncRouteFromLocation);
+    return () => window.removeEventListener("popstate", syncRouteFromLocation);
+  }, []);
+
+  const refreshAuthenticatedProjects = async (): Promise<HasProjectRecord[]> => {
+    if (demoModeRef.current) return [];
     const response = await apiFetch("/api/projects");
     const data: {
       profile?: HasProfile;
@@ -95,8 +127,10 @@ export default function StudioApp() {
       throw new Error("La respuesta no contiene un perfil autenticado.");
     }
 
+    const nextProjects = Array.isArray(data.projects) ? data.projects : [];
     setProfile(data.profile);
-    setProjects(Array.isArray(data.projects) ? data.projects : []);
+    setProjects(nextProjects);
+    return nextProjects;
   };
 
   const startDemoProfile = (name: DemoProfileName) => {
@@ -107,7 +141,7 @@ export default function StudioApp() {
     setProjects(getPublicSeedProjects());
     setLoadingProjects(false);
     setCompilationResult(null);
-    setActiveView("dashboard");
+    navigateToRoute({ view: "dashboard", step: 1 });
     setIsAuthModalOpen(false);
   };
 
@@ -121,12 +155,27 @@ export default function StudioApp() {
         const { data: sessionData } = await supabasePublic.auth.getSession();
         if (cancelled || demoModeRef.current) return;
         if (sessionData.session?.user) {
-          await refreshAuthenticatedProjects();
-          if (!cancelled) setIsAuthenticated(true);
+          const loadedProjects = await refreshAuthenticatedProjects();
+          if (!cancelled) {
+            const requestedProjectId = routeRef.current.projectId;
+            const requestedProject = requestedProjectId
+              ? loadedProjects.find((project) => project.id === requestedProjectId)
+              : undefined;
+            if (requestedProject?.project_spec) setWorkingSpec(requestedProject.project_spec);
+            setIsAuthenticated(true);
+            if (routeRef.current.view === "landing") {
+              navigateToRoute({ view: "dashboard", step: 1 }, true);
+            } else if (requestedProjectId && !requestedProject) {
+              navigateToRoute({ view: "dashboard", step: 1 }, true);
+            }
+          }
         } else if (!cancelled) {
           setProfile(EMPTY_PROFILE);
           setProjects(getPublicSeedProjects());
           setIsAuthenticated(false);
+          if (routeRef.current.view !== "landing") {
+            navigateToRoute({ view: "landing", step: 1 }, true);
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -134,6 +183,9 @@ export default function StudioApp() {
           setProfile(EMPTY_PROFILE);
           setProjects(getPublicSeedProjects());
           setIsAuthenticated(false);
+          if (routeRef.current.view !== "landing") {
+            navigateToRoute({ view: "landing", step: 1 }, true);
+          }
         }
       } finally {
         if (!cancelled) setLoadingProjects(false);
@@ -144,7 +196,34 @@ export default function StudioApp() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigateToRoute]);
+
+  useEffect(() => {
+    if (loadingProjects) return;
+    if (!hasStudioAccess && routeRef.current.view !== "landing") {
+      navigateToRoute({ view: "landing", step: 1 }, true);
+    } else if (hasStudioAccess && routeRef.current.view === "landing") {
+      navigateToRoute({ view: "dashboard", step: 1 }, true);
+    }
+  }, [activeView, hasStudioAccess, loadingProjects, navigateToRoute]);
+
+  useEffect(() => {
+    if (!isAuthenticated || isDemoMode || loadingProjects || !routeProjectId) return;
+    const requestedProject = projects.find((project) => project.id === routeProjectId);
+    if (requestedProject?.project_spec && workingSpec.id !== routeProjectId) {
+      const timer = window.setTimeout(() => {
+        setWorkingSpec(requestedProject.project_spec);
+        setCompilationResult(null);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (!requestedProject && activeView === "wizard") {
+      const timer = window.setTimeout(() => {
+        navigateToRoute({ view: "dashboard", step: 1 }, true);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, [activeView, isAuthenticated, isDemoMode, loadingProjects, navigateToRoute, projects, routeProjectId, workingSpec.id]);
 
   // Update dynamic font styling on body or wrapper
   const currentFontCss = resolveFontCssStack(workingSpec.fontFamily);
@@ -162,7 +241,12 @@ export default function StudioApp() {
       const seed = INITIAL_RETO11_PROJECTS.find((p) => p.id === projectId);
       if (seed) setWorkingSpec(seed);
     }
-    setActiveView("wizard");
+    const isSavedProject = projects.some((project) => project.id === projectId);
+    navigateToRoute({
+      view: "wizard",
+      step: 1,
+      ...(isSavedProject ? { projectId } : {}),
+    });
   };
 
   // Open project in Preview modal
@@ -229,6 +313,13 @@ export default function StudioApp() {
         setWorkingSpec(normalizedSpec);
         setCompilationResult({ ...data, sourceSpecSnapshot: JSON.stringify(normalizedSpec) });
         await refreshAuthenticatedProjects();
+        if (data.project?.id && routeRef.current.view === "wizard") {
+          navigateToRoute({
+            view: "wizard",
+            step: routeRef.current.step,
+            projectId: data.project.id,
+          }, true);
+        }
         return data;
       } else {
         throw new Error(data.error || "Error desconocido al compilar.");
@@ -253,7 +344,7 @@ export default function StudioApp() {
     setProfile(EMPTY_PROFILE);
     setProjects(getPublicSeedProjects());
     setCompilationResult(null);
-    setActiveView("landing");
+    navigateToRoute({ view: "landing", step: 1 });
   };
 
   return (
@@ -269,7 +360,7 @@ export default function StudioApp() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand & Identity */}
           <div
-            onClick={() => setActiveView(hasStudioAccess ? "dashboard" : "landing")}
+            onClick={() => navigateToRoute({ view: hasStudioAccess ? "dashboard" : "landing", step: 1 })}
             className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group shrink-0"
           >
             <HasLogo size={38} className="group-hover:scale-105 transition-transform shrink-0" />
@@ -293,7 +384,7 @@ export default function StudioApp() {
             <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80">
               <button
                 type="button"
-                onClick={() => setActiveView("dashboard")}
+                onClick={() => navigateToRoute({ view: "dashboard", step: 1 })}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
                   activeView === "dashboard"
                     ? "bg-white text-slate-900 shadow-sm"
@@ -309,7 +400,7 @@ export default function StudioApp() {
               {isAuthenticated && (
                 <button
                   type="button"
-                  onClick={() => setActiveView("wizard")}
+                  onClick={() => navigateToRoute({ view: "wizard", step: 1, ...(routeProjectId ? { projectId: routeProjectId } : {}) })}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
                     activeView === "wizard"
                       ? "bg-[#8A1428] text-white shadow-sm"
@@ -350,7 +441,7 @@ export default function StudioApp() {
             {hasStudioAccess ? (
               <div className="flex items-center gap-2">
                 <div
-                  onClick={() => setActiveView("dashboard")}
+                  onClick={() => navigateToRoute({ view: "dashboard", step: 1 })}
                   className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-800 flex items-center gap-1.5 cursor-pointer transition"
                 >
                   <User className="w-3.5 h-3.5 text-[#8A1428]" />
@@ -384,7 +475,7 @@ export default function StudioApp() {
         <div className="md:hidden flex items-center justify-around bg-white border-b border-slate-200 p-2 text-xs font-semibold">
           <button
             type="button"
-            onClick={() => setActiveView("dashboard")}
+            onClick={() => navigateToRoute({ view: "dashboard", step: 1 })}
             className={`py-1 px-3 rounded-lg ${
               activeView === "dashboard" ? "bg-rose-50 text-[#8A1428]" : "text-slate-600"
             }`}
@@ -394,7 +485,7 @@ export default function StudioApp() {
           {isAuthenticated && (
             <button
               type="button"
-              onClick={() => setActiveView("wizard")}
+              onClick={() => navigateToRoute({ view: "wizard", step: 1, ...(routeProjectId ? { projectId: routeProjectId } : {}) })}
               className={`py-1 px-3 rounded-lg ${
                 activeView === "wizard" ? "bg-[#8A1428] text-white" : "text-slate-600"
               }`}
@@ -411,13 +502,13 @@ export default function StudioApp() {
           <LandingView
             onStartWizard={() => {
               if (isDemoMode) {
-                setActiveView("dashboard");
+                navigateToRoute({ view: "dashboard", step: 1 });
                 return;
               }
               if (!isAuthenticated) {
                 setIsAuthModalOpen(true);
               } else {
-                setActiveView("wizard");
+                navigateToRoute({ view: "wizard", step: 1, ...(routeProjectId ? { projectId: routeProjectId } : {}) });
               }
             }}
             onOpenProject={(id) => {
@@ -473,7 +564,7 @@ export default function StudioApp() {
                 auditReport: ["Creado con HAS H5P Wizard."],
                 textChanges: [],
               });
-              setActiveView("wizard");
+              navigateToRoute({ view: "wizard", step: 1 });
             }}
             onPreviewProject={(id) => handleOpenPreviewModal(id, "player", isDemoMode)}
             onViewPh5p={(p) => handleOpenPreviewModal(p.id, "python", isDemoMode)}
@@ -485,6 +576,12 @@ export default function StudioApp() {
           <WizardSteps
             spec={workingSpec}
             setSpec={setWorkingSpec}
+            initialStep={wizardStep}
+            onStepChange={(step) => navigateToRoute({
+              view: "wizard",
+              step,
+              ...(routeProjectId ? { projectId: routeProjectId } : {}),
+            })}
             onCompile={handleCompilePackage}
             compiling={compiling}
             compilationResult={activeCompilationResult}
@@ -533,7 +630,7 @@ export default function StudioApp() {
           setIsDemoMode(false);
           setProfile(newProf);
           setIsAuthenticated(true);
-          setActiveView("dashboard");
+          navigateToRoute({ view: "dashboard", step: 1 });
           setLoadingProjects(true);
           setProjects([]);
           void refreshAuthenticatedProjects().catch(() => {

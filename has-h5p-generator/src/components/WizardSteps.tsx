@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Sparkles,
   Layers,
@@ -26,7 +26,6 @@ import {
   H5P_ACTIVITY_CATALOG,
   EDGE_NEURAL_VOICES,
   H5P_FONT_OPTIONS,
-  UAO_SLIDE_LAYOUTS,
   getPresentationTemplate,
   findSlideLayout,
 } from "@/lib/h5p-catalog";
@@ -39,6 +38,7 @@ import {
 } from "@/lib/h5p-engine";
 import TiltCard from "./TiltCard";
 import PresentationTemplateGallery from "./PresentationTemplateGallery";
+import LiveSlidePreview from "./LiveSlidePreview";
 import { apiFetch } from "@/lib/api-client";
 import { buildH5pViewerUrl } from "@/lib/h5p-preview-url";
 import { supportsVisualSpace } from "@/lib/visual-space";
@@ -46,6 +46,8 @@ import { supportsVisualSpace } from "@/lib/visual-space";
 interface WizardStepsProps {
   spec: HasProjectSpec;
   setSpec: React.Dispatch<React.SetStateAction<HasProjectSpec>>;
+  initialStep?: 1 | 2 | 3 | 4 | 5;
+  onStepChange?: (step: 1 | 2 | 3 | 4 | 5) => void;
   onCompile: (overrideSpec?: HasProjectSpec) => Promise<any>;
   compiling: boolean;
   compilationResult: any;
@@ -56,18 +58,47 @@ const MAX_REFORMULATION_SLIDES = 24;
 export default function WizardSteps({
   spec,
   setSpec,
+  initialStep = 1,
+  onStepChange,
   onCompile,
   compiling,
   compilationResult,
 }: WizardStepsProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [localCurrentStep, setLocalCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(initialStep);
+  const currentStep = onStepChange ? initialStep : localCurrentStep;
+  const setCurrentStep = (step: 1 | 2 | 3 | 4 | 5) => {
+    setLocalCurrentStep(step);
+    currentStepRef.current = step;
+    routeStepHandledRef.current = step;
+    step5AuthorizedProjectRef.current = step === 5 ? spec.id : null;
+    onStepChange?.(step);
+  };
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [previewAccessLoading, setPreviewAccessLoading] = useState(false);
-  const [previewAccessError, setPreviewAccessError] = useState<string | null>(null);
-  const [previewReady, setPreviewReady] = useState(false);
+  const [previewRequestState, setPreviewRequestState] = useState<{
+    projectId: string;
+    status: "loading" | "error" | "ready";
+    error?: string;
+  } | null>(null);
+  const previewAccessLoading = previewRequestState?.projectId === spec.id && previewRequestState.status === "loading";
+  const previewAccessError = previewRequestState?.projectId === spec.id && previewRequestState.status === "error"
+    ? previewRequestState.error || "No se pudo autorizar la vista previa."
+    : null;
+  const previewReady = previewRequestState?.projectId === spec.id && previewRequestState.status === "ready";
+  const previewAuthSequenceRef = useRef(0);
+  const currentSpecIdRef = useRef(spec.id);
+  const currentStepRef = useRef(currentStep);
+  const routeStepHandledRef = useRef<1 | 2 | 3 | 4 | 5 | null>(null);
+  const step5AuthorizedProjectRef = useRef<string | null>(null);
+  const authorizePreviewRef = useRef<(projectId: string) => Promise<boolean>>(async () => false);
+  useEffect(() => {
+    currentSpecIdRef.current = spec.id;
+  }, [spec.id]);
+  useEffect(() => {
+    currentStepRef.current = currentStep;
+  }, [currentStep]);
 
   // Preview key for iframe dynamic reloads
   const [previewKey, setPreviewKey] = useState<number>(0);
@@ -83,6 +114,14 @@ export default function WizardSteps({
   const [hasStep4DefaultSpec, setHasStep4DefaultSpec] = useState(false);
   const step4DefaultSpecRef = useRef<{ projectId: string; spec: HasProjectSpec } | null>(null);
 
+  useEffect(() => {
+    if (initialStep !== 4 || step4DefaultSpecRef.current?.projectId === spec.id) return;
+    step4DefaultSpecRef.current = { projectId: spec.id, spec: structuredClone(spec) };
+    setReformulationSlideCount(Math.min(spec.slides.length, MAX_REFORMULATION_SLIDES));
+    setHasReformulatedPresentation(false);
+    setHasStep4DefaultSpec(true);
+  }, [initialStep, spec]);
+
   const showToast = (message: string) => {
     setToastMessage(message);
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -91,10 +130,9 @@ export default function WizardSteps({
     }, 4500);
   };
 
-  const authorizePreview = async (projectId: string) => {
-    setPreviewReady(false);
-    setPreviewAccessLoading(true);
-    setPreviewAccessError(null);
+  const authorizePreview = useCallback(async (projectId: string): Promise<boolean> => {
+    const requestId = ++previewAuthSequenceRef.current;
+    setPreviewRequestState({ projectId, status: "loading" });
 
     try {
       const response = await apiFetch("/api/h5p/preview-access", {
@@ -106,17 +144,83 @@ export default function WizardSteps({
       if (!response.ok) {
         throw new Error(data.error || "No se pudo autorizar la vista previa.");
       }
-      setPreviewReady(true);
-    } catch (error: unknown) {
-      setPreviewAccessError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo autorizar la vista previa."
+      if (requestId !== previewAuthSequenceRef.current || currentSpecIdRef.current !== projectId) {
+        if (currentStepRef.current === 5 && currentSpecIdRef.current !== projectId) {
+          void authorizePreviewRef.current(currentSpecIdRef.current);
+        }
+        return false;
+      }
+      const cookieCheck = await fetch(
+        `/api/h5p-preview/${encodeURIComponent(projectId)}?__preview_check=1`,
+        { credentials: "same-origin", cache: "no-store" }
       );
-    } finally {
-      setPreviewAccessLoading(false);
+      const checkData: { error?: string } = await cookieCheck.json().catch(() => ({}));
+      if (!cookieCheck.ok) {
+        throw new Error(checkData.error || "El navegador no conservó la autorización de vista previa.");
+      }
+      if (requestId !== previewAuthSequenceRef.current || currentSpecIdRef.current !== projectId) {
+        if (currentStepRef.current === 5 && currentSpecIdRef.current !== projectId) {
+          void authorizePreviewRef.current(currentSpecIdRef.current);
+        }
+        return false;
+      }
+      setPreviewRequestState({ projectId, status: "ready" });
+      return true;
+    } catch (error: unknown) {
+      if (requestId !== previewAuthSequenceRef.current || currentSpecIdRef.current !== projectId) {
+        if (currentStepRef.current === 5 && currentSpecIdRef.current !== projectId) {
+          void authorizePreviewRef.current(currentSpecIdRef.current);
+        }
+        return false;
+      }
+      setPreviewRequestState({
+        projectId,
+        status: "error",
+        error: error instanceof Error ? error.message : "No se pudo autorizar la vista previa.",
+      });
+      return false;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    authorizePreviewRef.current = authorizePreview;
+  }, [authorizePreview]);
+
+  useEffect(() => {
+    if (initialStep !== 5) {
+      routeStepHandledRef.current = initialStep;
+      step5AuthorizedProjectRef.current = null;
+      return;
+    }
+    const enteringStepFive = routeStepHandledRef.current !== 5;
+    routeStepHandledRef.current = 5;
+    if (!enteringStepFive && step5AuthorizedProjectRef.current === spec.id) return;
+    step5AuthorizedProjectRef.current = spec.id;
+    const timer = window.setTimeout(() => {
+      void authorizePreview(spec.id).then((authorized) => {
+        if (authorized && currentSpecIdRef.current === spec.id) {
+          setPreviewKey((previous) => previous + 1);
+        }
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [authorizePreview, initialStep, spec.id]);
+
+  useEffect(() => {
+    if (currentStep !== 5) return;
+    const handlePreviewMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !event.data || typeof event.data !== "object") return;
+      if (
+        event.data.type !== "has-h5p-preview:reauthorize" ||
+        event.data.projectId !== spec.id
+      ) return;
+      void authorizePreview(spec.id).then((authorized) => {
+        if (authorized) setPreviewKey((previous) => previous + 1);
+      });
+    };
+    window.addEventListener("message", handlePreviewMessage);
+    return () => window.removeEventListener("message", handlePreviewMessage);
+  }, [authorizePreview, currentStep, spec.id]);
 
   // Dynamic download trigger for .h5p
   const triggerH5pDownload = async (customDownloadUrl?: string) => {
@@ -259,7 +363,17 @@ export default function WizardSteps({
   const [svgGenerating, setSvgGenerating] = useState(false);
 
   // Step 4 Slide editor state
-  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const [selectedSlideIndexState, setSelectedSlideIndex] = useState(0);
+  const selectedSlideIndex = Math.max(0, Math.min(selectedSlideIndexState, spec.slides.length - 1));
+
+  const updateSelectedSlide = (patch: Partial<HasSlideSpec>) => {
+    setSpec((previous) => ({
+      ...previous,
+      slides: previous.slides.map((slide, index) => index === selectedSlideIndex
+        ? { ...slide, ...patch }
+        : slide),
+    }));
+  };
 
   // Activity filter state in Step 2
   const [activityCategory, setActivityCategory] = useState<string>("all");
@@ -1329,126 +1443,103 @@ export default function WizardSteps({
             </div>
           </details>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Slides Navigation Strip */}
-            <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3xl p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-900">
-                  Diapositivas ({spec.slides.length})
+          <div className="space-y-5">
+            <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlideIndex((index) => Math.max(0, index - 1))}
+                  disabled={selectedSlideIndex <= 0}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Diapositiva anterior"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <label className="min-w-0 flex-1">
+                  <span className="sr-only">Diapositiva que quieres editar</span>
+                  <select
+                    value={selectedSlideIndex}
+                    onChange={(event) => setSelectedSlideIndex(Number(event.target.value))}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#8A1428] focus:outline-none focus:ring-2 focus:ring-[#8A1428]/20"
+                  >
+                    {spec.slides.map((slide, index) => (
+                      <option key={slide.id || index} value={index}>
+                        Diapositiva {index + 1} · {slide.menuTitle || "Sin título"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlideIndex((index) => Math.min(spec.slides.length - 1, index + 1))}
+                  disabled={selectedSlideIndex >= spec.slides.length - 1}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Diapositiva siguiente"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <span className="hidden shrink-0 text-[11px] font-semibold text-slate-500 sm:inline">
+                  {selectedSlideIndex + 1} / {spec.slides.length}
                 </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
+                    if (spec.slides.length >= MAX_REFORMULATION_SLIDES) return;
                     const newSlide: HasSlideSpec = {
-                      id: `slide-${Date.now().toString().slice(-4)}`,
+                      id: `slide-${Date.now().toString().slice(-6)}`,
                       templateSlide: 4,
-                      menuTitle: `Plantilla ${spec.slides.length + 1}`,
-                      titleBlack: "Nuevo Concepto",
+                      menuTitle: "Nueva diapositiva",
+                      titleBlack: "Nuevo concepto",
                       titleAccent: "Clave",
                       subtitle: "Subtítulo descriptivo",
                       paragraphs: ["Escribe el contenido aquí."],
                       compositionId: "composicion-01",
                       reserveVisualSpace: false,
                     };
-                    setSpec({ ...spec, slides: [...spec.slides, newSlide] });
+                    setSpec((previous) => ({ ...previous, slides: [...previous.slides, newSlide] }));
                     setReformulationSlideCount(Math.min(spec.slides.length + 1, MAX_REFORMULATION_SLIDES));
                     setSelectedSlideIndex(spec.slides.length);
                   }}
-                  className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#8A1428] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                  disabled={spec.slides.length >= MAX_REFORMULATION_SLIDES}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-[#8A1428] hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Añadir</span>
+                  <Plus className="h-3.5 w-3.5" /> Añadir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (spec.slides.length <= 1) return;
+                    const filtered = spec.slides.filter((_, index) => index !== selectedSlideIndex);
+                    setSpec((previous) => ({ ...previous, slides: previous.slides.filter((_, index) => index !== selectedSlideIndex) }));
+                    setReformulationSlideCount(Math.min(filtered.length, MAX_REFORMULATION_SLIDES));
+                    setSelectedSlideIndex(Math.max(0, selectedSlideIndex - 1));
+                  }}
+                  disabled={spec.slides.length <= 1}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Eliminar
                 </button>
               </div>
+            </section>
 
-              <div className="max-h-[580px] overflow-y-auto space-y-1.5 pr-1">
-                {spec.slides.map((s, idx) => {
-                  const isSelected = selectedSlideIndex === idx;
-                  const slideLayout = findSlideLayout(s.templateSlide);
-
-                  return (
-                    <div
-                      key={s.id || idx}
-                      onClick={() => setSelectedSlideIndex(idx)}
-                      className={`p-2.5 rounded-xl border cursor-pointer transition flex items-center justify-between text-xs ${
-                        isSelected
-                          ? "bg-rose-50/70 border-[#8A1428] font-bold text-slate-900"
-                          : "bg-white border-slate-100 hover:border-slate-200 text-slate-700"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-bold shrink-0">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate">{s.menuTitle || `Plantilla ${idx + 1}`}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-normal shrink-0">
-                        Plantilla {slideLayout.templateNumber}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Right Editor Form for Selected Slide */}
-            <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-5">
+            {/* Editor de la diapositiva seleccionada */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-5">
               {spec.slides[selectedSlideIndex] ? (
                 <>
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div>
+                  <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                    <div className="min-w-0">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A1428]">
-                        Diapositiva {selectedSlideIndex + 1} de {spec.slides.length}
+                        Editando diapositiva {selectedSlideIndex + 1}
                       </span>
-                      <h3 className="text-base font-bold text-slate-900">
-                        {spec.slides[selectedSlideIndex].menuTitle}
+                      <h3 className="truncate text-base font-bold text-slate-900">
+                        {spec.slides[selectedSlideIndex].menuTitle || "Sin título"}
                       </h3>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={findSlideLayout(spec.slides[selectedSlideIndex].templateSlide).slideNumber}
-                        onChange={(e) => {
-                          const newSlideNum = parseInt(e.target.value, 10);
-                          const updated = spec.slides.map((s, idx) =>
-                            idx === selectedSlideIndex
-                              ? {
-                                  ...s,
-                                  templateSlide: newSlideNum,
-                                  reserveVisualSpace: supportsVisualSpace(newSlideNum)
-                                    ? s.reserveVisualSpace ?? Boolean(s.svgDiagramId || s.customSvg || s.imagePendingDescription)
-                                    : false,
-                                }
-                              : s
-                          );
-                          setSpec({ ...spec, slides: updated });
-                        }}
-                        className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-[#8A1428]/30 focus:border-[#8A1428]"
-                      >
-                        {UAO_SLIDE_LAYOUTS.map((lay) => (
-                          <option key={lay.templateNumber} value={lay.slideNumber}>
-                            {lay.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (spec.slides.length <= 1) return;
-                          const filtered = spec.slides.filter(
-                            (_, i) => i !== selectedSlideIndex
-                          );
-                          setSpec({ ...spec, slides: filtered });
-                          setReformulationSlideCount(Math.min(filtered.length, MAX_REFORMULATION_SLIDES));
-                          setSelectedSlideIndex(Math.max(0, selectedSlideIndex - 1));
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                        title="Eliminar diapositiva"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <span className="hidden shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-semibold text-slate-600 sm:inline">
+                      {findSlideLayout(spec.slides[selectedSlideIndex].templateSlide).name}
+                    </span>
                   </div>
 
                   {/* Banner de paleta institucional activa */}
@@ -1509,12 +1600,9 @@ export default function WizardSteps({
                           <Layers className="w-4 h-4" />
                         </div>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div>
                             <span className="font-bold text-slate-900">
                               {currentLayout.name}
-                            </span>
-                            <span className="text-[10px] font-semibold bg-[#8A1428] text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              Plantilla {currentLayout.templateNumber}
                             </span>
                           </div>
                           <p className="text-slate-600 text-[11px] leading-relaxed">
@@ -1574,7 +1662,7 @@ export default function WizardSteps({
                         </div>
                         {!supportsVisualSlot && (
                           <p className="mt-2 text-[11px] text-amber-800" role="note">
-                            Esta composición no tiene una zona visual configurable. Para activar la reserva, elige la plantilla 4 (Estación con esquema) o la plantilla 6 (Debate).
+                            Esta composición no tiene una zona visual configurable. Para reservar una columna visual, usa el layout Estación con esquema o Debate.
                           </p>
                         )}
                       </section>
@@ -1626,11 +1714,7 @@ export default function WizardSteps({
                         type="text"
                         maxLength={35}
                         value={spec.slides[selectedSlideIndex].menuTitle || ""}
-                        onChange={(e) => {
-                          const updated = [...spec.slides];
-                          updated[selectedSlideIndex].menuTitle = e.target.value;
-                          setSpec({ ...spec, slides: updated });
-                        }}
+                        onChange={(e) => updateSelectedSlide({ menuTitle: e.target.value })}
                         className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
                       />
                     </div>
@@ -1642,11 +1726,7 @@ export default function WizardSteps({
                       <input
                         type="text"
                         value={spec.slides[selectedSlideIndex].subtitle || ""}
-                        onChange={(e) => {
-                          const updated = [...spec.slides];
-                          updated[selectedSlideIndex].subtitle = e.target.value;
-                          setSpec({ ...spec, slides: updated });
-                        }}
+                        onChange={(e) => updateSelectedSlide({ subtitle: e.target.value })}
                         className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
                       />
                     </div>
@@ -1658,27 +1738,19 @@ export default function WizardSteps({
                       <input
                         type="text"
                         value={spec.slides[selectedSlideIndex].titleBlack || ""}
-                        onChange={(e) => {
-                          const updated = [...spec.slides];
-                          updated[selectedSlideIndex].titleBlack = e.target.value;
-                          setSpec({ ...spec, slides: updated });
-                        }}
+                        onChange={(e) => updateSelectedSlide({ titleBlack: e.target.value })}
                         className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Título Acento Azul (Segunda Parte)
+                        Título de Acento (Segunda Parte)
                       </label>
                       <input
                         type="text"
                         value={spec.slides[selectedSlideIndex].titleAccent || ""}
-                        onChange={(e) => {
-                          const updated = [...spec.slides];
-                          updated[selectedSlideIndex].titleAccent = e.target.value;
-                          setSpec({ ...spec, slides: updated });
-                        }}
+                        onChange={(e) => updateSelectedSlide({ titleAccent: e.target.value })}
                         className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 text-[#0099E6] font-bold"
                       />
                     </div>
@@ -1692,14 +1764,9 @@ export default function WizardSteps({
                     <textarea
                       rows={4}
                       value={spec.slides[selectedSlideIndex].paragraphs?.join("\n\n") || ""}
-                      onChange={(e) => {
-                        const updated = [...spec.slides];
-                        updated[selectedSlideIndex].paragraphs = e.target.value
-                          .split("\n\n")
-                          .map((p) => p.trim())
-                          .filter(Boolean);
-                        setSpec({ ...spec, slides: updated });
-                      }}
+                      onChange={(e) => updateSelectedSlide({
+                        paragraphs: e.target.value.split("\n\n").map((p) => p.trim()).filter(Boolean),
+                      })}
                       className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 resize-none"
                     />
                   </div>
@@ -1712,11 +1779,7 @@ export default function WizardSteps({
                     <input
                       type="text"
                       value={spec.slides[selectedSlideIndex].highlightBox || ""}
-                      onChange={(e) => {
-                        const updated = [...spec.slides];
-                        updated[selectedSlideIndex].highlightBox = e.target.value;
-                        setSpec({ ...spec, slides: updated });
-                      }}
+                      onChange={(e) => updateSelectedSlide({ highlightBox: e.target.value })}
                       placeholder="Texto relevante que se destaca al pie de la diapositiva"
                       className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
                     />
@@ -1734,10 +1797,17 @@ export default function WizardSteps({
                 </>
               ) : (
                 <div className="text-center py-12 text-slate-400 text-xs">
-                  Selecciona una diapositiva en la lista izquierda.
+                  Elige una diapositiva en el selector superior.
                 </div>
               )}
             </div>
+            {spec.slides[selectedSlideIndex] && (
+              <LiveSlidePreview
+                spec={spec}
+                slide={spec.slides[selectedSlideIndex]}
+                slideNumber={selectedSlideIndex + 1}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1762,13 +1832,13 @@ export default function WizardSteps({
               <button
                 type="button"
                 onClick={handleRecompilePackage}
-                disabled={compiling}
+                disabled={compiling || previewAccessLoading}
                 className="px-5 py-2.5 rounded-xl bg-[#8A1428] hover:bg-[#6F1020] text-white font-bold text-xs shadow-md transition flex items-center gap-2 disabled:opacity-50 shrink-0 cursor-pointer"
               >
-                {compiling ? (
+                {compiling || previewAccessLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Compilando paquete...</span>
+                    <span>{compiling ? "Compilando paquete..." : "Autorizando preview..."}</span>
                   </>
                 ) : (
                   <>
@@ -1788,8 +1858,37 @@ export default function WizardSteps({
                 </div>
               )}
               {!previewAccessLoading && previewAccessError && (
-                <div className="w-full min-h-[500px] flex items-center justify-center px-6 text-center text-sm text-red-700 bg-red-50">
-                  {previewAccessError}
+                <div className="flex min-h-[500px] w-full flex-col items-center justify-center gap-4 bg-red-50 px-6 text-center text-sm text-red-700">
+                  <p>{previewAccessError}</p>
+                  <button
+                    type="button"
+                    onClick={() => void authorizePreview(spec.id).then((authorized) => {
+                      if (authorized) setPreviewKey((previous) => previous + 1);
+                    })}
+                    className="rounded-xl bg-[#8A1428] px-4 py-2 text-xs font-bold text-white hover:bg-[#6F1020]"
+                  >
+                    Reautorizar vista previa
+                  </button>
+                </div>
+              )}
+              {compiling && !previewAccessLoading && !previewReady && (
+                <div className="flex min-h-[500px] w-full items-center justify-center gap-2 bg-white text-sm text-slate-600">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Compilando el paquete H5P para la vista previa...</span>
+                </div>
+              )}
+              {!compiling && !previewAccessLoading && !previewAccessError && !previewReady && (
+                <div className="flex min-h-[500px] w-full flex-col items-center justify-center gap-3 bg-white px-6 text-center">
+                  <p className="text-sm font-semibold text-slate-800">El paquete aún no está cargado en esta sesión.</p>
+                  <p className="max-w-lg text-xs text-slate-500">Compila o recompila el H5P para guardar el recurso y activar el reproductor privado.</p>
+                  <button
+                    type="button"
+                    onClick={handleRecompilePackage}
+                    disabled={compiling}
+                    className="rounded-xl bg-[#8A1428] px-4 py-2 text-xs font-bold text-white hover:bg-[#6F1020] disabled:opacity-50"
+                  >
+                    Compilar y abrir preview
+                  </button>
                 </div>
               )}
               {!previewAccessLoading && !previewAccessError && previewReady && (

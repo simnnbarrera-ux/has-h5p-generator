@@ -8,10 +8,12 @@ import {
 import { synthesizeEdgeTtsMp3 } from "@/lib/tts-server";
 import {
   checkAndLogRateLimit,
+  getProjectForUser,
   loadH5pTemplateBuffer,
   saveProjectToDb,
   uploadH5pPackageToSupabase,
 } from "@/lib/supabase-server";
+import { uploadH5pPreviewAssetsToSupabase } from "@/lib/h5p-preview-storage";
 import type { HasProjectRecord } from "@/lib/supabase";
 import {
   createPreviewToken,
@@ -106,23 +108,43 @@ export async function POST(req: NextRequest) {
     );
 
     // 4. Subir paquete privado a Supabase Cloud Storage si está disponible
-    let storagePath: string;
+    const previousProject = await getProjectForUser(workingSpec.id, user.id);
+    let storagePath: string | null = null;
+    let previewAssetPaths: string[] = [];
     try {
       storagePath = await uploadH5pPackageToSupabase(
         user.id,
         workingSpec.id,
         buildResult.h5pBuffer
       );
+      previewAssetPaths = await uploadH5pPreviewAssetsToSupabase(
+        user.id,
+        workingSpec.id,
+        storagePath,
+        buildResult.h5pBuffer
+      );
     } catch (storageErr) {
+      if (storagePath) {
+        try {
+          await removeStoredH5pPackage(user.id, workingSpec.id, storagePath, previewAssetPaths);
+        } catch (cleanupErr) {
+          console.warn(
+            "[H5P Build] No se pudieron limpiar los archivos temporales de la compilación:",
+            cleanupErr instanceof Error ? cleanupErr.name : "UnknownError"
+          );
+        }
+      }
       console.error(
         "[H5P Build] Private package upload failed:",
         storageErr instanceof Error ? storageErr.name : "UnknownError"
       );
       return NextResponse.json(
-        { error: "El paquete se generó, pero no pudo guardarse en el almacenamiento privado. No se guardaron los cambios; inténtalo de nuevo más tarde." },
+        { error: "El paquete se generó, pero no se pudieron guardar sus archivos de vista previa privados. No se guardaron los cambios; inténtalo de nuevo más tarde." },
         { status: 503, headers: { "Cache-Control": "private, no-store" } }
       );
     }
+
+    if (!storagePath) throw new Error("No se obtuvo una ruta de Storage para el paquete generado.");
 
     // 5. Persistir registro en base de datos
     const now = new Date().toISOString();
@@ -152,7 +174,7 @@ export async function POST(req: NextRequest) {
       saved = await saveProjectToDb(record, user.id);
     } catch (saveErr) {
       try {
-        await removeStoredH5pPackage(user.id, workingSpec.id, storagePath);
+        await removeStoredH5pPackage(user.id, workingSpec.id, storagePath, previewAssetPaths);
       } catch (cleanupErr) {
         console.warn(
           "[H5P Build] Could not remove the unreferenced package after a failed project save:",
@@ -160,6 +182,17 @@ export async function POST(req: NextRequest) {
         );
       }
       throw saveErr;
+    }
+
+    if (previousProject?.storage_path && previousProject.storage_path !== storagePath) {
+      try {
+        await removeStoredH5pPackage(user.id, workingSpec.id, previousProject.storage_path);
+      } catch (cleanupErr) {
+        console.warn(
+          "[H5P Build] No se pudo limpiar la versión anterior del paquete:",
+          cleanupErr instanceof Error ? cleanupErr.name : "UnknownError"
+        );
+      }
     }
 
     // 6. Generar cookie de autorización para previsualización segura

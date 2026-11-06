@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   X,
   Play,
@@ -14,6 +14,7 @@ import {
 import { HasProjectRecord } from "@/lib/supabase";
 import { getPresentationTemplate } from "@/lib/h5p-catalog";
 import { apiFetch } from "@/lib/api-client";
+import { buildH5pViewerUrl } from "@/lib/h5p-preview-url";
 
 interface H5pPreviewModalProps {
   isOpen: boolean;
@@ -45,9 +46,15 @@ export default function H5pPreviewModal({
   const [copied, setCopied] = useState(false);
   const previewRequestKey = `${sessionKey}:${activeTab}:${tabRevision}`;
   const shouldRequestPreview = isOpen && Boolean(projectId) && activeTab === "player";
+  const previewRequestSequenceRef = useRef(0);
+  const latestPreviewContextRef = useRef({ projectId, previewRequestKey, shouldRequestPreview, isPublicDemo });
+  const issuePreviewAuthorizationRef = useRef<(key: string, targetProjectId?: string) => Promise<void>>(async () => {});
+  useEffect(() => {
+    latestPreviewContextRef.current = { projectId, previewRequestKey, shouldRequestPreview, isPublicDemo };
+  }, [isPublicDemo, previewRequestKey, projectId, shouldRequestPreview]);
   const [previewState, setPreviewState] = useState<{
     key: string;
-    status: "ready" | "error";
+    status: "loading" | "ready" | "error";
     error?: string;
   }>({ key: "", status: "ready" });
   const previewStatus: "idle" | "loading" | "ready" | "error" = !shouldRequestPreview
@@ -65,32 +72,90 @@ export default function H5pPreviewModal({
   const [downloadErrorState, setDownloadErrorState] = useState<{ key: string; error: string | null }>({ key: "", error: null });
   const downloadError = downloadErrorState.key === sessionKey ? downloadErrorState.error : null;
 
+  const issuePreviewAuthorization = useCallback(async (key: string, targetProjectId = projectId) => {
+    const requestSequence = ++previewRequestSequenceRef.current;
+    const isCurrentRequest = () => {
+      const context = latestPreviewContextRef.current;
+      return requestSequence === previewRequestSequenceRef.current &&
+        context.projectId === targetProjectId &&
+        context.previewRequestKey === key &&
+        context.shouldRequestPreview &&
+        !context.isPublicDemo;
+    };
+    const reauthorizeActiveProject = () => {
+      const context = latestPreviewContextRef.current;
+      if (
+        context.projectId &&
+        context.projectId !== targetProjectId &&
+        context.shouldRequestPreview &&
+        !context.isPublicDemo
+      ) {
+        void issuePreviewAuthorizationRef.current(context.previewRequestKey, context.projectId);
+      }
+    };
+
+    try {
+      const response = await apiFetch("/api/h5p/preview-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: targetProjectId }),
+      });
+      const data: { error?: string } = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "No se pudo autorizar la vista previa.");
+      if (!isCurrentRequest()) {
+        reauthorizeActiveProject();
+        return;
+      }
+      const probe = await fetch(
+        `/api/h5p-preview/${encodeURIComponent(targetProjectId)}?__preview_check=1`,
+        { credentials: "same-origin", cache: "no-store" }
+      );
+      const probeData: { error?: string } = await probe.json().catch(() => ({}));
+      if (!probe.ok) throw new Error(probeData.error || "El navegador no conservó la autorización de vista previa.");
+      if (!isCurrentRequest()) {
+        reauthorizeActiveProject();
+        return;
+      }
+      setPreviewState({ key, status: "ready" });
+    } catch (error: unknown) {
+      if (!isCurrentRequest()) {
+        reauthorizeActiveProject();
+        return;
+      }
+      setPreviewState({
+        key,
+        status: "error",
+        error: error instanceof Error ? error.message : "No se pudo autorizar la vista previa.",
+      });
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    issuePreviewAuthorizationRef.current = issuePreviewAuthorization;
+  }, [issuePreviewAuthorization]);
+
   useEffect(() => {
     if (!shouldRequestPreview || !projectId || isPublicDemo) return;
-    let cancelled = false;
-    apiFetch("/api/h5p/preview-access", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId }),
-    })
-      .then(async (response) => {
-        const data: { error?: string } = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || "No se pudo autorizar la vista previa.");
-        if (!cancelled) setPreviewState({ key: previewRequestKey, status: "ready" });
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setPreviewState({
-            key: previewRequestKey,
-            status: "error",
-            error: error instanceof Error ? error.message : "No se pudo autorizar la vista previa.",
-          });
-        }
-      });
-    return () => {
-      cancelled = true;
+    const timer = window.setTimeout(() => {
+      void issuePreviewAuthorization(previewRequestKey);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isPublicDemo, issuePreviewAuthorization, previewRequestKey, projectId, shouldRequestPreview]);
+
+  useEffect(() => {
+    if (!shouldRequestPreview || isPublicDemo) return;
+    const handlePreviewMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !event.data || typeof event.data !== "object") return;
+      if (event.data.type !== "has-h5p-preview:reauthorize" || event.data.projectId !== projectId) return;
+      setTabState((previous) => ({
+        key: sessionKey,
+        tab: "player",
+        revision: (previous.key === sessionKey ? previous.revision : 0) + 1,
+      }));
     };
-  }, [isPublicDemo, previewRequestKey, projectId, shouldRequestPreview]);
+    window.addEventListener("message", handlePreviewMessage);
+    return () => window.removeEventListener("message", handlePreviewMessage);
+  }, [isPublicDemo, projectId, sessionKey, shouldRequestPreview]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -251,9 +316,7 @@ export default function H5pPreviewModal({
               )}
               {!previewAccessLoading && !previewAccessError && previewReady && (
                 <iframe
-                  src={`/preview-viewer/index.html?id=${encodeURIComponent(
-                    project.id
-                  )}`}
+                  src={buildH5pViewerUrl(project.id, tabRevision)}
                   className="w-full h-full flex-1 border-none min-h-[460px]"
                   title="Reproductor H5P"
                 />

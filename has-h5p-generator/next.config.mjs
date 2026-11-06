@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return [
+      { source: '/landing', destination: '/' },
+      { source: '/dashboard', destination: '/' },
+      { source: '/dashboard/:path*', destination: '/' },
+    ];
+  },
   // Next.js gestiona estos paquetes externos y los incluye en el file tracing
   // de las funciones serverless de Vercel.
   serverExternalPackages: [
@@ -10,8 +17,7 @@ const nextConfig = {
     'isomorphic-ws',
     'jszip',
   ],
-  // sharp se carga dinámicamente para mantener el motor cliente-seguro; NFT no
-  // puede inferir ese require, así que se incluye en la función que lo necesita.
+  // Se incluyen los binarios nativos de Sharp en la función de compilación H5P.
   outputFileTracingIncludes: {
     '/api/h5p/build': [
       './node_modules/sharp/**/*',

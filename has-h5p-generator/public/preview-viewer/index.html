@@ -457,19 +457,99 @@
         }
       });
 
-      // 1. Intentar desde la API serverless en vivo (/api/h5p-preview/<id>)
-      initPlayer('/api/h5p-preview/' + encodeURIComponent(id))
-        .then(onPlayerReady)
-        .catch(function (primaryErr) {
-          console.warn('API Preview fallback a ruta estática:', primaryErr);
-          // 2. Fallback a directorio estático public/preview-h5p/<id>
-          initPlayer('/preview-h5p/' + encodeURIComponent(id))
-            .then(onPlayerReady)
-            .catch(function (fallbackErr) {
-              console.error('Error cargando reproductor H5P:', fallbackErr);
-              statusEl.innerHTML = '<div style="color:#8A1428;font-weight:600;margin-bottom:6px;">No se pudo renderizar la vista previa</div><div style="font-size:12px;color:#64748B;">Pulsa "Compilar Paquete H5P" en el Estudio para generar este recurso.</div>';
-            });
+      var apiPath = '/api/h5p-preview/' + encodeURIComponent(id);
+
+      // H5PStandalone puede usar fetch o XMLHttpRequest según la versión del bundle.
+      // Ambas rutas son same-origin; se fuerza el envío de la cookie HttpOnly de preview.
+      var nativeFetch = window.fetch.bind(window);
+      window.fetch = function (input, init) {
+        var rawUrl = typeof input === 'string' ? input : (input && input.url) || '';
+        var requestUrl;
+        try { requestUrl = new URL(rawUrl, window.location.href); } catch (e) {}
+        if (requestUrl && requestUrl.origin === window.location.origin && requestUrl.pathname.indexOf('/api/h5p-preview/') === 0) {
+          var options = Object.assign({}, init || {}, { credentials: 'include', cache: 'no-store' });
+          return nativeFetch(input, options);
+        }
+        return nativeFetch(input, init);
+      };
+
+      var nativeXhrOpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function (method, url) {
+        var result = nativeXhrOpen.apply(this, arguments);
+        try {
+          var requestUrl = new URL(url, window.location.href);
+          if (requestUrl.origin === window.location.origin && requestUrl.pathname.indexOf('/api/h5p-preview/') === 0) {
+            this.withCredentials = true;
+          }
+        } catch (e) {}
+        return result;
+      };
+
+      function renderFailure(title, message, needsAuthorization) {
+        statusEl.textContent = '';
+        var titleNode = document.createElement('div');
+        titleNode.style.cssText = 'color:#8A1428;font-weight:700;margin-bottom:6px;';
+        titleNode.textContent = title;
+        var messageNode = document.createElement('div');
+        messageNode.style.cssText = 'font-size:12px;color:#64748B;max-width:520px;margin:0 auto;';
+        messageNode.textContent = message;
+        statusEl.appendChild(titleNode);
+        statusEl.appendChild(messageNode);
+
+        var action = document.createElement('button');
+        action.type = 'button';
+        action.style.cssText = 'margin-top:14px;padding:9px 14px;border:0;border-radius:10px;background:#8A1428;color:#fff;font:600 12px system-ui,sans-serif;cursor:pointer;';
+        action.textContent = needsAuthorization ? 'Reautorizar vista previa' : 'Reintentar carga';
+        action.addEventListener('click', function () {
+          if (needsAuthorization) {
+            action.disabled = true;
+            action.textContent = 'Solicitando autorización…';
+            window.parent.postMessage({ type: 'has-h5p-preview:reauthorize', projectId: id }, window.location.origin);
+          } else {
+            window.location.reload();
+          }
         });
+        statusEl.appendChild(action);
+      }
+
+      async function startPlayer() {
+        try {
+          // El probe valida cookie y propiedad del proyecto sin descargar/descomprimir el ZIP.
+          var check = await fetch(apiPath + '?__preview_check=1', {
+            credentials: 'include',
+            cache: 'no-store'
+          });
+          var checkType = check.headers.get('content-type') || '';
+          var checkData = checkType.indexOf('application/json') >= 0
+            ? await check.json().catch(function () { return {}; })
+            : {};
+          if (!check.ok) {
+            var expired = check.status === 401;
+            renderFailure(
+              expired ? 'La autorización de vista previa expiró' : 'No se pudo verificar el paquete',
+              checkData.error || ('El servidor respondió con estado ' + check.status + '.'),
+              expired
+            );
+            return;
+          }
+          if (checkType.indexOf('application/json') < 0) {
+            renderFailure('Respuesta inesperada del servidor', 'El endpoint de preview devolvió HTML en vez de JSON. Recarga el estudio e inténtalo de nuevo.', true);
+            return;
+          }
+
+          await initPlayer(apiPath);
+          onPlayerReady();
+        } catch (error) {
+          console.error('Error cargando reproductor H5P:', error);
+          renderFailure(
+            'No se pudo cargar la vista previa',
+            'El paquete no respondió correctamente. Puedes reautorizar la sesión o volver a intentar la carga.',
+            true
+          );
+        }
+      }
+
+      startPlayer();
     })();
   </script>
 </body>
