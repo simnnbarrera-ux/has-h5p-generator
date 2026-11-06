@@ -183,6 +183,40 @@ export default function LiveSlidePreview({ spec, slide, slideNumber }: LiveSlide
                 ))}
               </div>
 
+              {isCoverOrClosing && slideNumber === 1 && spec.slides.length > 1 && (
+                <div className="mt-[4%] w-full">
+                  <div className="mb-[1.2%] flex items-center justify-between gap-2 text-[7px] font-extrabold uppercase tracking-[0.12em] sm:text-[9px]" style={{ color: colors.primary }}>
+                    <span>Recorrido de la presentación</span>
+                    <span className="font-semibold tracking-normal" style={{ color: colors.textMuted }}>
+                      {Math.min(spec.slides.length - 1, 3)} temas iniciales
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-[1.2%]">
+                    {spec.slides.slice(1, 4).map((nextSlide, index) => (
+                      <div
+                        key={`cover-outline-${nextSlide.id || index}`}
+                        className="flex min-h-[42px] min-w-0 items-start gap-[4%] overflow-hidden rounded-lg border p-[2.5%] shadow-sm sm:min-h-[58px]"
+                        style={{ backgroundColor: colors.cardBg, borderColor: colors.cardBorder }}
+                      >
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[7px] font-extrabold text-white sm:h-5 sm:w-5 sm:text-[8px]" style={{ backgroundColor: colors.primary }}>
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="line-clamp-2 block text-[7px] font-bold leading-tight sm:text-[9px]" style={{ color: colors.textPrimary }}>
+                            {nextSlide.menuTitle || nextSlide.titleBlack || `Tema ${index + 1}`}
+                          </span>
+                          {nextSlide.subtitle && (
+                            <span className="mt-0.5 line-clamp-1 block text-[6px] leading-tight sm:text-[7px]" style={{ color: colors.textMuted }}>
+                              {nextSlide.subtitle}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {isReferenceLayout && (
                 <div className="space-y-[3%] border-l pl-[6%]" style={{ borderColor: colors.cardBorder }}>
                   {paragraphs.slice(0, 2).map((paragraph, index) => <p key={`reference-${index}`} className="line-clamp-4 text-[clamp(7px,0.9vw,10px)] leading-relaxed" style={{ color: colors.textMuted }}>{paragraph}</p>)}

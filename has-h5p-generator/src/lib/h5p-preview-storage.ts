@@ -3,6 +3,7 @@ import "server-only";
 import JSZip from "jszip";
 import path from "node:path";
 import { getSupabaseAdmin, H5P_STORAGE_BUCKET } from "@/lib/supabase-server";
+import { isH5pPreviewAssetPath } from "@/lib/h5p-preview-assets";
 
 const MAX_ENTRIES = 2_500;
 const MAX_ENTRY_BYTES = 30 * 1024 * 1024;
@@ -85,10 +86,15 @@ export async function uploadH5pPreviewAssetsToSupabase(
     if (
       relativePath.startsWith("/") ||
       /^[A-Za-z]:/.test(relativePath) ||
-      relativePath.split("/").some((part) => part === "." || part === "..") ||
-      !safePreviewRelativePath(relativePath) ||
-      relativePath.toLowerCase().endsWith(".svg")
+      relativePath.split("/").some((part) => part === "." || part === "..")
     ) {
+      throw new Error("El H5P contiene una ruta de archivo no permitida.");
+    }
+    // H5P packages bundle root-level library CSS/JS, but the viewer loads those
+    // shared libraries from /h5p-libs. Only h5p.json and authored content belong
+    // in the per-project private preview bucket.
+    if (!isH5pPreviewAssetPath(relativePath)) continue;
+    if (!safePreviewRelativePath(relativePath) || relativePath.toLowerCase().endsWith(".svg")) {
       throw new Error("El H5P contiene un archivo que no se puede publicar en la vista previa.");
     }
     const size = Number((entry as JSZip.JSZipObject & { _data?: { uncompressedSize?: number } })._data?.uncompressedSize || 0);

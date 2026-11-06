@@ -1443,7 +1443,66 @@ export default function WizardSteps({
             </div>
           </details>
 
-          <div className="space-y-5">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <aside className="self-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4">
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900">Diapositivas</h3>
+                  <p className="mt-0.5 text-[10px] text-slate-500">{spec.slides.length} títulos en esta presentación</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (spec.slides.length >= MAX_REFORMULATION_SLIDES) return;
+                    const newSlide: HasSlideSpec = {
+                      id: `slide-${Date.now().toString().slice(-6)}`,
+                      templateSlide: 4,
+                      menuTitle: "Nueva diapositiva",
+                      titleBlack: "Nuevo concepto",
+                      titleAccent: "Clave",
+                      subtitle: "Subtítulo descriptivo",
+                      paragraphs: ["Escribe el contenido aquí."],
+                      compositionId: "composicion-01",
+                      reserveVisualSpace: false,
+                    };
+                    setSpec((previous) => ({ ...previous, slides: [...previous.slides, newSlide] }));
+                    setReformulationSlideCount(Math.min(spec.slides.length + 1, MAX_REFORMULATION_SLIDES));
+                    setSelectedSlideIndex(spec.slides.length);
+                  }}
+                  disabled={spec.slides.length >= MAX_REFORMULATION_SLIDES}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-2 text-xs font-semibold text-[#8A1428] hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Añadir
+                </button>
+              </div>
+              <nav aria-label="Títulos de las diapositivas" className="max-h-[620px] space-y-1.5 overflow-y-auto pr-1">
+                {spec.slides.map((slide, index) => {
+                  const isSelected = selectedSlideIndex === index;
+                  return (
+                    <button
+                      key={slide.id || index}
+                      type="button"
+                      aria-current={isSelected ? "true" : undefined}
+                      onClick={() => setSelectedSlideIndex(index)}
+                      className={`flex w-full items-center gap-2 rounded-xl border p-2.5 text-left text-xs transition ${
+                        isSelected
+                          ? "border-[#8A1428] bg-rose-50/70 font-bold text-slate-900"
+                          : "border-slate-100 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${isSelected ? "bg-[#8A1428] text-white" : "bg-slate-100 text-slate-600"}`}>
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {slide.menuTitle || `Diapositiva ${index + 1}`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </aside>
+
+            <div className="min-w-0 space-y-5 lg:col-span-8">
             <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <button
@@ -1483,30 +1542,6 @@ export default function WizardSteps({
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (spec.slides.length >= MAX_REFORMULATION_SLIDES) return;
-                    const newSlide: HasSlideSpec = {
-                      id: `slide-${Date.now().toString().slice(-6)}`,
-                      templateSlide: 4,
-                      menuTitle: "Nueva diapositiva",
-                      titleBlack: "Nuevo concepto",
-                      titleAccent: "Clave",
-                      subtitle: "Subtítulo descriptivo",
-                      paragraphs: ["Escribe el contenido aquí."],
-                      compositionId: "composicion-01",
-                      reserveVisualSpace: false,
-                    };
-                    setSpec((previous) => ({ ...previous, slides: [...previous.slides, newSlide] }));
-                    setReformulationSlideCount(Math.min(spec.slides.length + 1, MAX_REFORMULATION_SLIDES));
-                    setSelectedSlideIndex(spec.slides.length);
-                  }}
-                  disabled={spec.slides.length >= MAX_REFORMULATION_SLIDES}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-[#8A1428] hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Añadir
-                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1633,7 +1668,7 @@ export default function WizardSteps({
                           <div className="max-w-2xl">
                             <h4 className="text-xs font-bold text-slate-900">Espacio para imagen en esta diapositiva</h4>
                             <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
-                              Actívalo para mantener una columna visual; si aún no hay imagen, quedará en blanco. Desactívalo para ocultar la imagen y ampliar el espacio del texto.
+                              Este control reserva o libera una columna visual; no genera una imagen. Si no agregaste un diagrama o imagen, la columna queda vacía.
                             </p>
                           </div>
                           <button
@@ -1808,6 +1843,7 @@ export default function WizardSteps({
                 slideNumber={selectedSlideIndex + 1}
               />
             )}
+            </div>
           </div>
         </div>
       )}

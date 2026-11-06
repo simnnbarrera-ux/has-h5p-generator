@@ -6,6 +6,7 @@ import { createHash, randomUUID } from "node:crypto";
 import JSZip from "jszip";
 import { getProjectForUser, downloadH5pPackageFromSupabase } from "@/lib/supabase-server";
 import { downloadH5pPreviewAssetFromSupabase } from "@/lib/h5p-preview-storage";
+import { isH5pPreviewAssetPath } from "@/lib/h5p-preview-assets";
 import { PREVIEW_COOKIE_NAME, verifyPreviewToken } from "@/lib/preview-token";
 import { isSafeProjectId } from "@/lib/project-validation";
 
@@ -88,9 +89,11 @@ async function unpackPrivatePackage(projectId: string, ownerId: string, targetDi
         if (
           normalized.startsWith("/") ||
           /^[A-Za-z]:/.test(normalized) ||
-          normalized.split("/").some((part) => part === ".." || part === ".") ||
-          !(normalized === "h5p.json" || normalized.startsWith("content/"))
+          normalized.split("/").some((part) => part === ".." || part === ".")
         ) throw new Error("El ZIP contiene una ruta no permitida.");
+        // Ignore bundled library dependencies; the viewer loads shared libraries
+        // from /h5p-libs and only this package's manifest/content are per-project.
+        if (!isH5pPreviewAssetPath(normalized)) continue;
         if (normalized.toLowerCase().endsWith(".svg")) throw new Error("No se admiten SVG dentro del contenido H5P.");
         const expandedSize = Number((entry as any)._data?.uncompressedSize || 0);
         if (expandedSize > MAX_ENTRY_BYTES) throw new Error("El ZIP contiene un archivo demasiado grande.");
