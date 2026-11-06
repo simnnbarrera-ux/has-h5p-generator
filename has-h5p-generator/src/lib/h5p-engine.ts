@@ -264,7 +264,7 @@ export function htmlDestacado(
   fontStack = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
   colorTexto = NEGRO
 ): string {
-  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:4px 10px;border:none;text-align:center;"><p style="margin:0;line-height:1.35;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${colorTexto};font-family:${fontStack};"><em><strong>${escHtml(
+  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:8px 16px;border:none;text-align:center;"><p style="margin:0;line-height:1.35;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${colorTexto};font-family:${fontStack};"><em><strong>${escHtml(
     t
   )}</strong></em></span></p></td></tr></table>`;
 }
@@ -274,7 +274,7 @@ export function htmlPendiente(
   tam = "0.85em",
   fontStack = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif"
 ): string {
-  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:4px 10px;border:none;text-align:center;"><p style="margin:0;line-height:1.3;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};"><strong>PENDIENTE: </strong></span><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};">${escHtml(
+  return `<table style="width:100%;height:100%;border-collapse:collapse;border:none;margin:0;padding:0;"><tr><td style="vertical-align:middle;padding:8px 16px;border:none;text-align:center;"><p style="margin:0;line-height:1.3;font-family:${fontStack};text-align:center;"><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};"><strong>PENDIENTE: </strong></span><span style="font-size:${tam};color:${NARANJA};font-family:${fontStack};">${escHtml(
     t
   )}</span></p></td></tr></table>`;
 }
@@ -1512,10 +1512,10 @@ function compileSlideFromSpec(
             els[2].action.params.shape.fillColor = colorHighlightBg;
             els[2].action.params.shape.borderColor = colorAccent;
           }
-          els[4].x = 52.5;
-          els[4].y = 65.5;
-          els[4].width = 41;
-          els[4].height = 20;
+          els[4].x = 51;
+          els[4].y = 63.5;
+          els[4].width = 44;
+          els[4].height = 24;
           els[4].action.params.text = htmlDestacado(
             slideSpec.highlightBox,
             sz("0.82em"),
@@ -1527,10 +1527,10 @@ function compileSlideFromSpec(
           els[2].y = 63.5;
           els[2].width = 44;
           els[2].height = 24;
-          els[4].x = 52.5;
-          els[4].y = 65.5;
-          els[4].width = 41;
-          els[4].height = 20;
+          els[4].x = 51;
+          els[4].y = 63.5;
+          els[4].width = 44;
+          els[4].height = 24;
           els[4].action.params.text = htmlPendiente(
             slideSpec.pendingNote,
             sz("0.82em"),
@@ -1586,10 +1586,10 @@ function compileSlideFromSpec(
               els[2].action.params.shape.borderWidth = "2";
               els[2].action.params.shape.borderRadius = "10";
             }
-            els[4].x = 8.5;
-            els[4].y = 66.5;
-            els[4].width = 83;
-            els[4].height = 18.5;
+            els[4].x = 6.9;
+            els[4].y = 64.5;
+            els[4].width = 86.2;
+            els[4].height = 22.5;
             els[4].action.params.text = htmlDestacado(
               slideSpec.highlightBox,
               sz("0.84em"),
@@ -1608,10 +1608,10 @@ function compileSlideFromSpec(
               els[2].action.params.shape.borderWidth = "2";
               els[2].action.params.shape.borderRadius = "12";
             }
-            els[4].x = 8.5;
-            els[4].y = 35;
-            els[4].width = 83;
-            els[4].height = 38;
+            els[4].x = 6.9;
+            els[4].y = 33;
+            els[4].width = 86.2;
+            els[4].height = 42;
             els[4].action.params.text = htmlDestacado(
               slideSpec.highlightBox,
               sz("0.96em"),
@@ -1625,10 +1625,10 @@ function compileSlideFromSpec(
             els[2].y = 64.5;
             els[2].width = 86.2;
             els[2].height = 22.5;
-            els[4].x = 8.5;
-            els[4].y = 66.5;
-            els[4].width = 83;
-            els[4].height = 18.5;
+            els[4].x = 6.9;
+            els[4].y = 64.5;
+            els[4].width = 86.2;
+            els[4].height = 22.5;
             els[4].action.params.text = htmlPendiente(
               slideSpec.pendingNote,
               sz("0.82em"),
@@ -1639,10 +1639,10 @@ function compileSlideFromSpec(
             els[2].y = 33;
             els[2].width = 86.2;
             els[2].height = 42;
-            els[4].x = 8.5;
-            els[4].y = 35;
-            els[4].width = 83;
-            els[4].height = 38;
+            els[4].x = 6.9;
+            els[4].y = 33;
+            els[4].width = 86.2;
+            els[4].height = 42;
             els[4].action.params.text = htmlPendiente(
               slideSpec.pendingNote,
               sz("0.92em"),
